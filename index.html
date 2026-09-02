@@ -1774,7 +1774,7 @@
     const tail = document.getElementById('rs-tail');
     const saveBtn = document.getElementById('rs-save');
     if (art) art.classList.remove('open');
-    if (body) const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.remove('up');
+    const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.remove('up');
     if (line) { line.classList.remove('draw'); line.classList.add('gone'); }
     if (tail) tail.classList.remove('up');
     if (saveBtn) {
