@@ -501,9 +501,9 @@
 
 <!-- Language Switcher (Top Right on all pages) -->
 <div id="lang-toggle-wrap">
-  <button type="button" id="lang-en-btn" class="lang-btn active" onclick="setLang('en')">EN</button>
+  <button type="button" id="lang-en-btn" class="lang-btn" onclick="setLang('en')">EN</button>
   <span class="lang-divider">/</span>
-  <button type="button" id="lang-kr-btn" class="lang-btn" onclick="setLang('kr')">KR</button>
+  <button type="button" id="lang-kr-btn" class="lang-btn active" onclick="setLang('kr')">KR</button>
 </div>
 
 <!-- Navigation arrows -->
@@ -546,7 +546,7 @@
       <p style="margin:0 0 clamp(18px,2.6vw,30px);font-size:clamp(11px,1.1vw,13px);color:#9FE7FF;font-weight:600;animation:om-track 1.5s cubic-bezier(.16,1,.3,1) .35s both;">MOVEMENT THAT INSPIRES</p>
 
       <!-- English Title -->
-      <h1 id="intro-title-en" style="position:relative;margin:0;font-weight:700;letter-spacing:-.035em;line-height:1.16;font-size:clamp(38px,7.4vw,104px);">
+      <h1 id="intro-title-en" style="display:none;position:relative;margin:0;font-weight:700;letter-spacing:-.035em;line-height:1.16;font-size:clamp(38px,7.4vw,104px);">
         <span style="display:block;overflow:hidden;padding-bottom:.06em;">
           <span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.70s both;">W</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.76s both;">h</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.81s both;">e</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.87s both;">r</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.92s both;">e</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.03s both;">w</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.09s both;">i</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.14s both;">l</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.20s both;">l</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.30s both;">y</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.36s both;">o</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.41s both;">u</span>
         </span>
@@ -559,7 +559,7 @@
       </h1>
 
       <!-- Korean Title -->
-      <h1 id="intro-title-kr" style="display:none;position:relative;margin:0;font-weight:700;letter-spacing:-.035em;line-height:1.16;font-size:clamp(38px,7.4vw,104px);">
+      <h1 id="intro-title-kr" style="display:block;position:relative;margin:0;font-weight:700;letter-spacing:-.035em;line-height:1.16;font-size:clamp(38px,7.4vw,104px);">
         <span style="display:block;overflow:hidden;padding-bottom:.06em;">
           <span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.70s both;">2</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.76s both;">0</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.81s both;">2</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.87s both;">7</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.92s both;">년</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.98s both;">,</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.06s both;">당</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.12s both;">신</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.18s both;">의</span>
         </span>
@@ -755,7 +755,7 @@
 
 <script>
   // ── Language State & Translations ──
-  let currentLang = 'en';
+  let currentLang = 'kr';
 
   const I18N = {
     en: {
@@ -1863,7 +1863,8 @@
     renderResult();
   })();
 
-  // Initial nav visibility
+  // Initial language & nav visibility
+  setLang('kr');
   updateNavVisibility();
 
 </script>
