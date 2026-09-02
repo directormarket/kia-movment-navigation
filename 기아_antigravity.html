@@ -877,6 +877,21 @@
     if (saveBtn && !saveBtn.classList.contains('done')) {
       saveBtn.textContent = (lang === 'kr') ? '나만의 만다라로 저장' : 'Save as my own mandala';
     }
+    if (typeof RS_CODE !== 'undefined' && typeof RS_KIND !== 'undefined') {
+      applyCard(RS_CODE, RS_KIND);
+      const t = RS_TYPE[RS_CODE];
+      if (t) {
+        if (lang === 'kr') {
+          document.getElementById('rs-rare').innerHTML =
+            '참가자의 <b>' + t.share + '%</b>가 &ldquo;' + t.kr + '&rdquo; 결과를 받았습니다. ' +
+            '여섯 개의 선택지가 모두 일치해야 같은 이미지가 완성되므로, 정확히 이 만다라를 받은 사람은 <b>1.6%</b>에 불과합니다.';
+        } else {
+          document.getElementById('rs-rare').innerHTML =
+            '<b>' + t.share + '%</b> of participants got &ldquo;' + t.en + '&rdquo;. ' +
+            'All six choices have to match for the image to match too, so only <b>1.6%</b> received exactly this one.';
+        }
+      }
+    }
   }
 
   // ── Slide Navigation & Arrow Visibility ──
