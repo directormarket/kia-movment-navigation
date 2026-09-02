@@ -576,12 +576,12 @@
       </div>
 
       <p id="intro-sub" style="margin:0;max-width:30ch;font-size:clamp(15px,1.9vw,22px);line-height:1.75;color:rgba(245,241,234,.66);text-wrap:pretty;animation:om-rise 1s cubic-bezier(.16,1,.3,1) 2.2s both;">
-        Six questions. One minute.<br>Find out where your movement leads.
+        여섯 개의 질문. 1분의 시간.<br>당신의 움직임이 닿는 곳을 발견해보세요.
       </p>
 
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:clamp(16px,2.4vw,28px);margin-top:clamp(30px,4.6vw,52px);animation:om-rise 1s cubic-bezier(.16,1,.3,1) 2.6s both;">
         <button onclick="goToSlide(2)" class="cta-intro-dark" style="display:inline-flex;align-items:center;gap:14px;padding:18px clamp(26px,3vw,36px);border-radius:999px;background:#F5F1EA;color:#07090D;font-size:clamp(15px,1.5vw,17px);font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;font-family:Pretendard,-apple-system,system-ui,sans-serif;transition:background .25s ease,transform .25s ease,box-shadow .25s ease;box-shadow:0 0 0 rgba(159,231,255,0);">
-          <span id="intro-btn-text">Start the minute</span>
+          <span id="intro-btn-text">1분 시작하기</span>
           <span style="display:inline-block;animation:om-arrow 1.8s ease-in-out infinite;">→</span>
         </button>
       </div>
@@ -596,11 +596,11 @@
     <canvas id="q1-mask" style="display:none;position:absolute;"></canvas>
     <div id="q1-content">
       <div id="q1-inner">
-        <p class="question" id="q1-text">In the last minute<br>before the new year,<br>what comes to mind?</p>
+        <p class="question" id="q1-text">새해를 앞둔<br>마지막 1분,<br>어떤 생각이 떠오르나요?</p>
         <div class="answers">
           <button class="answer-btn" onclick="selectAnswer(this, 2)">
             <span class="num">01</span>
-            <span class="answer-text" id="q1-a1">How far could I go next year?</span>
+            <span class="answer-text" id="q1-a1">내년엔 어디까지 가볼까</span>
           </button>
           <button class="answer-btn" onclick="selectAnswer(this, 2)">
             <span class="num">02</span>
@@ -681,11 +681,11 @@
     <div class="answers">
       <button class="answer-btn" onclick="selectAnswer(this, 6)">
         <span class="num">01</span>
-        <span class="answer-text" id="q5-a1">Map the route and the schedule first</span>
+        <span class="answer-text" id="q5-a1">갈 곳과 일정부터 정리하고 챙긴다</span>
       </button>
       <button class="answer-btn" onclick="selectAnswer(this, 6)">
         <span class="num">02</span>
-        <span class="answer-text" id="q5-a2">Just pack — figure out the rest on arrival</span>
+        <span class="answer-text" id="q5-a2">일단 싼다 — 나머지는 도착해서 생각</span>
       </button>
     </div>
   </div>
@@ -693,15 +693,15 @@
   <!-- ══════════ Q6 ══════════ -->
   <div class="slide" id="slide-7">
     <div id="plan-wrap"></div>
-    <p class="question" id="q6-text">The plan you built so carefully<br>fell apart on day one.</p>
+    <p class="question" id="q6-text">공들여 짠 계획이<br>첫날부터 틀어졌다.</p>
     <div class="answers">
       <button class="answer-btn" onclick="selectAnswer(this, 7)">
         <span class="num">01</span>
-        <span class="answer-text" id="q6-a1">Switch to plan B</span>
+        <span class="answer-text" id="q6-a1">플랜 B 가동</span>
       </button>
       <button class="answer-btn" onclick="selectAnswer(this, 7)">
         <span class="num">02</span>
-        <span class="answer-text" id="q6-a2">Even better this way</span>
+        <span class="answer-text" id="q6-a2">오히려 좋아</span>
       </button>
     </div>
   </div>
@@ -721,15 +721,15 @@
       <div id="rs-tail">
         <p id="rs-rare"></p>
         <div id="rs-next">
-          <h2>Keep going this way</h2>
-          <p class="hint">Kia stories from the global site, matched to your type.</p>
+          <h2 id="rs-next-title">추천 여정 둘러보기</h2>
+          <p class="hint" id="rs-next-hint">당신의 여행 유형과 어울리는 기아의 스토리</p>
           <div id="rs-links"></div>
         </div>
         <div id="rs-share">
-          <button type="button" id="rs-save">Save as my own mandala</button>
-          <button type="button" id="rs-share-btn">Share</button>
+          <button type="button" id="rs-save">나만의 만다라로 저장</button>
+          <button type="button" id="rs-share-btn">공유하기</button>
         </div>
-        <button type="button" id="rs-again">Try again</button>
+        <button type="button" id="rs-again">다시 하기</button>
       </div>
     </div>
   </div>
@@ -737,14 +737,14 @@
   <!-- ══════════ SHARE SHEET (from index_윤진.html) ══════════ -->
   <div id="sh-back"></div>
   <div id="sh" role="dialog" aria-modal="true" aria-label="Share">
-    <div class="hd"><h3>Share your result</h3><button class="cl" id="sh-close">Close</button></div>
+    <div class="hd"><h3 id="sh-title">결과 공유하기</h3><button class="cl" id="sh-close">닫기</button></div>
     <div class="grid">
-      <button data-go="image"><span class="ic">↓</span>Save image</button>
+      <button data-go="image"><span class="ic">↓</span><span id="sh-save-img">이미지 저장</span></button>
       <button data-go="kakao"><span class="ic" style="background:#FEE500">K</span>KakaoTalk</button>
       <button data-go="x"><span class="ic" style="background:#000;color:#fff">X</span>X</button>
       <button data-go="fb"><span class="ic" style="background:#1877F2;color:#fff">f</span>Facebook</button>
       <button data-go="threads"><span class="ic" style="background:#000;color:#fff">@</span>Threads</button>
-      <button data-go="copy"><span class="ic">↗</span>Copy link</button>
+      <button data-go="copy"><span class="ic">↗</span><span id="sh-copy-link">링크 복사</span></button>
     </div>
     <p class="note" id="sh-note"></p>
   </div>
@@ -762,7 +762,7 @@
 
   const I18N = {
     en: {
-      introSub: 'Six questions. One minute.<br>Find out where your movement leads.',
+      introSub: '여섯 개의 질문. 1분의 시간.<br>당신의 움직임이 닿는 곳을 발견해보세요.',
       introBtn: 'Start the minute',
       q1: 'In the last minute<br>before the new year,<br>what comes to mind?',
       q1_a1: 'How far could I go next year?',
@@ -877,6 +877,14 @@
     const shareBtn = document.getElementById('rs-share-btn');
     if (againBtn) againBtn.textContent = (lang === 'kr') ? '다시 하기' : 'Try again';
     if (shareBtn) shareBtn.textContent = (lang === 'kr') ? '공유하기' : 'Share';
+    const shTitle = document.getElementById('sh-title');
+    const shClose = document.getElementById('sh-close');
+    const shSaveImg = document.getElementById('sh-save-img');
+    const shCopyLink = document.getElementById('sh-copy-link');
+    if (shTitle) shTitle.textContent = (lang === 'kr') ? '결과 공유하기' : 'Share your result';
+    if (shClose) shClose.textContent = (lang === 'kr') ? '닫기' : 'Close';
+    if (shSaveImg) shSaveImg.textContent = (lang === 'kr') ? '이미지 저장' : 'Save image';
+    if (shCopyLink) shCopyLink.textContent = (lang === 'kr') ? '링크 복사' : 'Copy link';
     if (saveBtn && !saveBtn.classList.contains('done')) {
       saveBtn.textContent = (lang === 'kr') ? '나만의 만다라로 저장' : 'Save as my own mandala';
     }
@@ -1704,9 +1712,15 @@
       '<b>' + t.share + '%</b> of participants got &ldquo;' + t.kr + '&rdquo;. ' +
       'All six choices have to match for the image to match too, so only <b>1.6%</b> received exactly this one.';
 
+    const nextTitle = document.getElementById('rs-next-title');
+    const nextHint = document.getElementById('rs-next-hint');
+    if (nextTitle) nextTitle.textContent = (currentLang === 'kr') ? '추천 여정 둘러보기' : 'Keep going this way';
+    if (nextHint) nextHint.textContent = (currentLang === 'kr') ? '당신의 여행 유형과 어울리는 기아의 스토리' : 'Kia stories from the global site, matched to your type.';
+
     const box = document.getElementById('rs-links');
     box.innerHTML = '';
-    t.links.forEach(function(L){
+    const links = (currentLang === 'kr') ? (t.links_kr || t.links_en) : (t.links_en || t.links_kr);
+    links.forEach(function(L){
       const a = document.createElement('a');
       a.className = 'rs-link'; a.href = L[3];
       a.target = '_blank'; a.rel = 'noopener';
@@ -1914,6 +1928,10 @@
     };
   });
 
+  // Initial language & nav visibility (MUST run before fromShare)
+  setLang('kr');
+  updateNavVisibility();
+
   // arriving from a shared link jumps straight to the result
   (function fromShare(){
     const m = location.search.match(/[?&]type=(RP|RF|EP|EF)/);
@@ -1926,10 +1944,6 @@
     pinScroll();
     renderResult();
   })();
-
-  // Initial language & nav visibility
-  setLang('kr');
-  updateNavVisibility();
 
 </script>
 
