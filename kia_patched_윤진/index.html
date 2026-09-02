@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Last Minute — Movement Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Nunito:wght@900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Intro keyframes ── */
+    @keyframes om-rise{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes om-fade{from{opacity:0;}to{opacity:1;}}
+    @keyframes om-mask{from{clip-path:inset(0 0 100% 0);transform:translateY(18px);}to{clip-path:inset(0 0 -20% 0);transform:translateY(0);}}
+    @keyframes om-line{from{transform:scaleX(0);opacity:0;}60%{opacity:1;}to{transform:scaleX(1);opacity:1;}}
+    @keyframes om-streak{0%{left:-22%;opacity:0;}12%{opacity:1;}70%{opacity:1;}100%{left:112%;opacity:0;}}
+    @keyframes om-glowpulse{0%,100%{opacity:.35;transform:translate(-50%,-50%) scale(1);}50%{opacity:.8;transform:translate(-50%,-50%) scale(1.12);}}
+    @keyframes om-dot{0%,100%{opacity:.28;}50%{opacity:1;}}
+    @keyframes om-drift{0%{transform:translate3d(0,0,0);}100%{transform:translate3d(-60px,-40px,0);}}
+    @keyframes om-blink{0%,45%{opacity:1;}50%,95%{opacity:.15;}100%{opacity:1;}}
+    @keyframes om-arrow{0%,100%{transform:translateX(0);}50%{transform:translateX(6px);}}
+    @keyframes om-char{0%{opacity:0;transform:translateY(.85em) scaleY(1.18);filter:blur(14px);}55%{opacity:1;filter:blur(0);}70%{transform:translateY(-.045em) scaleY(.985);}100%{opacity:1;transform:translateY(0) scaleY(1);filter:blur(0);}}
+    @keyframes om-sweep{0%,62%{transform:translateX(-120%) skewX(-14deg);opacity:0;}66%{opacity:1;}72%{opacity:1;}100%{transform:translateX(120%) skewX(-14deg);opacity:0;}}
+    @keyframes om-track{from{letter-spacing:.9em;opacity:0;filter:blur(6px);}to{letter-spacing:.34em;opacity:1;filter:blur(0);}}
+    @keyframes om-breathe{0%,100%{transform:translateY(0);}50%{transform:translateY(-.055em);}}
+    @keyframes om-run320{from{background-position:0 0;}to{background-position:-320px 0;}}
+    @keyframes om-run420{from{background-position:0 0;}to{background-position:-420px 0;}}
+    @keyframes om-run260{from{background-position:0 0;}to{background-position:-260px 0;}}
+    @keyframes om-run180{from{background-position:0 0;}to{background-position:-180px 0;}}
+    @keyframes om-raster{0%{background-position:0 0;}100%{background-position:0 4px;}}
+    @keyframes om-flicker{0%,100%{opacity:1;}37%{opacity:.88;}52%{opacity:.58;}78%{opacity:.8;}}
+    @keyframes om-jolt{0%,100%{transform:translateY(0);}23%{transform:translateY(1.5px);}47%{transform:translateY(-1px);}71%{transform:translateY(2px);}}
+    .cta-intro{display:inline-flex;align-items:center;gap:14px;padding:18px clamp(26px,3vw,36px);border-radius:999px;background:#F5F1EA;color:#07090D;font-size:clamp(15px,1.5vw,17px);font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;transition:background .25s ease,transform .25s ease,box-shadow .25s ease;box-shadow:0 0 0 rgba(159,231,255,0);}
+    .cta-intro:hover{background:#9FE7FF !important;color:#07090D !important;transform:translateY(-2px);box-shadow:0 18px 44px rgba(159,231,255,.22);}
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #000;
+    }
+
+    /* ── Slide system ── */
+    .slides-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      transition: transform 0.7s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    .slide {
+      width: 100vw;
+      min-height: 100vh;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Visual section (top, dark) ── */
+    .visual {
+      flex: 1;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Content section (bottom, light) ── */
+    .content {
+      background: #f0ede8;
+      padding: clamp(24px, 3.5vw, 48px) clamp(28px, 6vw, 72px);
+    }
+
+    .question {
+      font-size: clamp(19px, 2.8vw, 30px);
+      font-weight: 900;
+      color: #000;
+      line-height: 1.35;
+      margin-bottom: clamp(18px, 2.5vw, 28px);
+    }
+
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .answer-btn {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: transparent;
+      border: 1.5px solid #1a1a1a;
+      padding: clamp(13px, 1.8vw, 17px) clamp(16px, 2.5vw, 22px);
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .answer-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #000;
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+    }
+
+    .answer-btn:hover::before,
+    .answer-btn.selected::before { transform: translateX(0); }
+
+    .answer-btn:hover .num, .answer-btn:hover .answer-text,
+    .answer-btn.selected .num, .answer-btn.selected .answer-text { color: #fff; }
+
+    .num {
+      font-size: clamp(13px, 1.4vw, 16px);
+      font-weight: 700;
+      color: #000;
+      min-width: 26px;
+      position: relative;
+      z-index: 1;
+      transition: color 0.2s ease;
+    }
+
+    .answer-text {
+      font-size: clamp(12px, 1.3vw, 15px);
+      font-weight: 400;
+      color: #000;
+      line-height: 1.4;
+      position: relative;
+      z-index: 1;
+      transition: color 0.2s ease;
+    }
+
+    /* ─────────────────────────────────────
+       Q1 ── Zigzag countdown
+    ───────────────────────────────────── */
+    #slide-1 { position: relative; height: 100dvh; min-height: 520px; overflow: hidden; background: #07090D; }
+    .cta-intro-dark:hover{background:#9FE7FF !important;color:#07090D !important;transform:translateY(-2px);box-shadow:0 18px 44px rgba(159,231,255,.22);}
+
+    #q1-content {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: clamp(24px, 3.5vw, 48px) clamp(28px, 6vw, 72px);
+    }
+    #q1-inner {
+      width: fit-content;
+      pointer-events: auto;
+    }
+    #q1-inner .question {
+      color: #ffffff;
+    }
+    #q1-inner .answers {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #q1-inner .answer-btn {
+      width: 100%;
+      border-color: rgba(255,255,255,0.45);
+    }
+    #q1-inner .answer-btn::before {
+      background: #ffffff;
+    }
+    #q1-inner .num,
+    #q1-inner .answer-text {
+      color: #ffffff;
+    }
+    #q1-inner .answer-btn:hover .num,
+    #q1-inner .answer-btn:hover .answer-text,
+    #q1-inner .answer-btn.selected .num,
+    #q1-inner .answer-btn.selected .answer-text {
+      color: #000000;
+    }
+
+    /* ─────────────────────────────────────
+       Q2 ── Diagonal flowing text band
+    ───────────────────────────────────── */
+    #slide-2 { position: relative; background: #0a0a0a; }  /* Q1 */
+
+    #q2-content {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: clamp(24px, 3.5vw, 48px) clamp(28px, 6vw, 72px);
+    }
+    #q2-inner {
+      width: fit-content;
+      pointer-events: auto;
+    }
+    #q2-inner .question { color: #ffffff; }
+    #q2-inner .answers { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    #q2-inner .answer-btn { width: 100%; border-color: rgba(255,255,255,0.45); }
+    #q2-inner .answer-btn::before { background: #ffffff; }
+    #q2-inner .num, #q2-inner .answer-text { color: #ffffff; }
+    #q2-inner .answer-btn:hover .num, #q2-inner .answer-btn:hover .answer-text,
+    #q2-inner .answer-btn.selected .num, #q2-inner .answer-btn.selected .answer-text { color: #000000; }
+
+    /* ─────────────────────────────────────
+       Q3 ── Tilted scrolling list (canvas)
+    ───────────────────────────────────── */
+    #slide-3 { position: relative; background: #0a0a0a; }
+    #slide-4 { position: relative; background: #0a0a0a; }
+
+    #q3-content {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: clamp(24px, 3.5vw, 48px) clamp(28px, 6vw, 72px);
+    }
+    #q3-inner { width: fit-content; pointer-events: auto; }
+    #q3-inner .question { color: #ffffff; }
+    #q3-inner .answers { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    #q3-inner .answer-btn { width: 100%; border-color: rgba(255,255,255,0.45); }
+    #q3-inner .answer-btn::before { background: #ffffff; }
+    #q3-inner .num, #q3-inner .answer-text { color: #ffffff; }
+    #q3-inner .answer-btn:hover .num, #q3-inner .answer-btn:hover .answer-text,
+    #q3-inner .answer-btn.selected .num, #q3-inner .answer-btn.selected .answer-text { color: #000000; }
+
+    /* ── Q5 pendulum swing ── */
+    @keyframes swing {
+      from { transform: rotate(-30deg); }
+      to   { transform: rotate(30deg); }
+    }
+
+    /* ── Q4 fan / Q5 pendulum / Q6 plan ── */
+    #slide-5, #slide-6, #slide-7 { position: relative; }
+    #fan-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .fan-line-base, .fan-line-inner {
+      position: absolute;
+      width: min(34.2vw, 24vh);
+      height: 1.5px;
+      background: rgba(255,255,255,0.9);
+      left: 50%;
+      top: 28%;
+      margin-top: -0.75px;
+      transform-origin: left center;
+      will-change: transform, opacity;
+    }
+
+    /* ── Q6 plan character scatter ── */
+    #plan-wrap {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 300px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .plan-assembled-word {
+      position: absolute;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+      font-weight: 900;
+      font-size: clamp(76px, 15vw, 150px);
+      letter-spacing: 0.04em;
+      color: #ffffff;
+      white-space: nowrap;
+      line-height: 1;
+      text-shadow: 0 0 28px rgba(255,255,255,0.3);
+      will-change: transform, opacity;
+      user-select: none;
+    }
+    .jamo-char {
+      position: absolute;
+      font-family: 'KiaSignature', 'Pretendard', sans-serif;
+      letter-spacing: -0.02em;
+      font-weight: 900;
+      font-size: clamp(42px, 12.5vw, 112px);
+      color: #ffffff;
+      white-space: nowrap;
+      line-height: 1;
+      will-change: transform, opacity;
+      text-shadow: 0 0 24px rgba(255,255,255,0.25);
+      user-select: none;
+    }
+
+    /* ── Q4 / Q5 / Q6 ── */
+    #slide-5, #slide-6, #slide-7 {
+      background: #0a0a0a;
+      justify-content: flex-end;
+      padding: clamp(24px, 3.5vw, 48px) clamp(28px, 6vw, 72px);
+    }
+    #slide-5 .question, #slide-6 .question, #slide-7 .question { color: #ffffff; }
+    #slide-5 .answer-btn, #slide-6 .answer-btn, #slide-7 .answer-btn {
+      border-color: rgba(255,255,255,0.45);
+    }
+    #slide-5 .answer-btn::before, #slide-6 .answer-btn::before, #slide-7 .answer-btn::before { background: #ffffff; }
+    #slide-5 .num, #slide-5 .answer-text,
+    #slide-6 .num, #slide-6 .answer-text,
+    #slide-7 .num, #slide-7 .answer-text { color: #ffffff; }
+    #slide-5 .answer-btn:hover .num, #slide-5 .answer-btn:hover .answer-text,
+    #slide-5 .answer-btn.selected .num, #slide-5 .answer-btn.selected .answer-text,
+    #slide-6 .answer-btn:hover .num, #slide-6 .answer-btn:hover .answer-text,
+    #slide-6 .answer-btn.selected .num, #slide-6 .answer-btn.selected .answer-text,
+    #slide-7 .answer-btn:hover .num, #slide-7 .answer-btn:hover .answer-text,
+    #slide-7 .answer-btn.selected .num, #slide-7 .answer-btn.selected .answer-text { color: #000000; }
+
+    /* legacy ticker (unused, kept for safety) */
+    .ticker-item.active {
+      font-weight: 700;
+    }
+
+    /* ─────────────────────────────────────
+       Time-up overlay
+    ───────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      z-index: 100;
+    }
+
+    .overlay.visible { opacity: 1; pointer-events: all; }
+
+    .overlay-text {
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      line-height: 1.6;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s;
+    }
+
+    .overlay.visible .overlay-text { opacity: 1; transform: translateY(0); }
+
+
+    /* ══════════ Kia Signature ══════════
+       Drop the licensed webfont files into fonts/ and this applies.
+       If the font is installed locally, local() picks it up first. */
+    @font-face{font-family:"KiaSignature";font-weight:300;font-display:swap;
+      src:local("KiaSignature Light"),local("KiaSignatureOTF Light"),
+          url("fonts/KiaSignature-Light.woff2") format("woff2");}
+    @font-face{font-family:"KiaSignature";font-weight:400;font-display:swap;
+      src:local("KiaSignature Regular"),local("KiaSignatureOTF Regular"),local("기아 시그니처"),
+          url("fonts/KiaSignature-Regular.woff2") format("woff2");}
+    @font-face{font-family:"KiaSignature";font-weight:700;font-display:swap;
+      src:local("KiaSignature Bold"),local("KiaSignatureOTF Bold"),
+          url("fonts/KiaSignature-Bold.woff2") format("woff2");}
+
+    /* !important is needed to override the inline Pretendard declarations.
+       Once those inline font rules are removed, this block can go too.
+       The pendulum no / w / here keeps Nunito as a display face. */
+    body, .slide, .question, .answer-text, .num, .overlay-text,
+    .cta-intro-dark, #slide-1 h1, #slide-1 p, #result-slide *{
+      font-family:"KiaSignature","Kia Signature","Pretendard",
+                  "Noto Sans KR",-apple-system,sans-serif !important;
+    }
+
+    /* ── Q4 부채: 회전 원점을 내려 화면 중앙에 오게 하고 길이를 키운다.
+       부채가 원점 위쪽으로만 펼쳐지므로, 시각적 중심은 원점보다 길이의 절반만큼 위에 생긴다.
+       원점 63% + 길이 34vh → 구성의 중심이 대략 46% 지점. */
+    .fan-line-base, .fan-line-inner{
+      top: 63%;
+      width: min(56vw, 34vh);
+    }
+
+    /* KAKAO_KEY: to enable KakaoTalk sharing, create an app at developers.kakao.com,
+       take the JavaScript key and paste it into KAKAO_KEY near the bottom of index.html.
+       The deployed domain must also be registered under Platform > Web. */
+
+    /* ══════════ Share sheet ══════════ */
+    #sh-back{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);
+      opacity:0;pointer-events:none;transition:opacity .28s ease}
+    #sh-back.on{opacity:1;pointer-events:auto}
+    #sh{position:fixed;left:0;right:0;bottom:0;z-index:201;background:#11171B;
+      border-top:1px solid #242C31;padding:22px 22px calc(26px + env(safe-area-inset-bottom));
+      transform:translateY(102%);transition:transform .34s cubic-bezier(.16,1,.3,1)}
+    #sh.on{transform:none}
+    #sh .hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+    #sh h3{font-size:17px;font-weight:700;margin:0}
+    #sh .cl{background:none;border:0;color:#7C8589;font-size:14px;cursor:pointer}
+    #sh .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:10px}
+    #sh .grid button{display:flex;flex-direction:column;align-items:center;gap:9px;
+      padding:16px 6px;border:1px solid #242C31;border-radius:14px;background:none;
+      color:#E4E9EA;font-size:12.5px;cursor:pointer;transition:border-color .16s,background .16s}
+    #sh .grid button:hover{border-color:#F4F2ED;background:#161D22}
+    #sh .ic{width:26px;height:26px;display:grid;place-items:center;font-size:15px;
+      font-weight:700;border-radius:8px;background:#F4F2ED;color:#11171B}
+    #sh .note{margin-top:16px;font-size:12px;color:#5E666A;line-height:1.7}
+    @media(min-width:640px){#sh{left:50%;right:auto;bottom:28px;width:460px;
+      transform:translate(-50%,120%);border:1px solid #242C31;border-radius:18px}
+      #sh.on{transform:translate(-50%,0)}}
+
+    /* Bottom scrim so the question stays readable over the kinetic type.
+       Q1 keeps a short one — its countdown numeral sits at the centre and
+       a tall scrim would swallow it. */
+    #q1-content::before{
+      content:"";position:absolute;left:0;right:0;bottom:0;height:30%;
+      background:linear-gradient(to top,
+        rgba(0,0,0,.92) 0%, rgba(0,0,0,.78) 42%, rgba(0,0,0,0) 100%);
+      pointer-events:none;z-index:-1;
+    }
+    #q2-content::before, #q3-content::before{
+      content:"";position:absolute;left:0;right:0;bottom:0;height:62%;
+      background:linear-gradient(to top,
+        rgba(0,0,0,.94) 0%, rgba(0,0,0,.86) 34%,
+        rgba(0,0,0,.5) 68%, rgba(0,0,0,0) 100%);
+      pointer-events:none;z-index:-1;
+    }
+    #q1-inner, #q2-inner, #q3-inner{position:relative;z-index:1}
+    #slide-5 .question, #slide-6 .question, #slide-7 .question,
+    #slide-5 .answers,  #slide-6 .answers,  #slide-7 .answers{position:relative;z-index:2}
+    #slide-5::after, #slide-6::after, #slide-7::after{
+      content:"";position:absolute;left:0;right:0;bottom:0;height:46%;
+      background:linear-gradient(to top,rgba(0,0,0,.9),rgba(0,0,0,0));
+      pointer-events:none;z-index:1;
+    }
+
+    /* ══════════ Result slide ══════════ */
+    /* 슬라이드 시스템이 translateY 로 100vh 단위 이동을 하므로
+       결과 슬라이드도 정확히 100vh 여야 합니다. 넘치는 내용은
+       페이지가 아니라 슬라이드 안에서 스크롤시킵니다. */
+    #result-slide{position:relative;background:#0B0E10;color:#F4F2ED;
+      height:100vh;min-height:100vh;max-height:100vh;
+      overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+      padding:clamp(28px,5vw,64px) clamp(22px,6vw,72px) clamp(56px,8vw,96px);
+      align-items:center;}
+    #rs-wrap{width:100%;max-width:520px;margin:0 auto}
+    #rs-card{background:transparent}
+    #rs-art-wrap{position:relative;width:100%;overflow:hidden;background:#0B0E10;
+      box-shadow:0 22px 60px rgba(0,0,0,.5)}
+    #rs-art{display:block;width:100%;height:auto;
+      clip-path:inset(var(--hz) 0 calc(100% - var(--hz)) 0);
+      transform:scale(1.045);transform-origin:50% var(--hz);
+      transition:clip-path .72s cubic-bezier(.16,1,.3,1),
+                 transform .9s cubic-bezier(.16,1,.3,1)}
+    #rs-art.open{clip-path:inset(0 0 0 0);transform:scale(1)}
+    #rs-hz{position:absolute;left:50%;top:var(--hz);width:0;height:1.5px;
+      background:#E0662F;transform:translate(-50%,-50%);opacity:0}
+    #rs-hz.draw{width:100%;opacity:1;
+      transition:width .42s cubic-bezier(.3,0,.2,1),opacity .2s}
+    #rs-hz.gone{opacity:0;transition:opacity .5s}
+    #rs-body{display:block;width:100%;height:auto;opacity:0;transform:translateY(30px);
+      box-shadow:0 22px 60px rgba(0,0,0,.5);
+      transition:opacity .5s ease-out,transform .62s cubic-bezier(.16,1,.3,1)}
+    #rs-body.up{opacity:1;transform:none}
+    #rs-save.done{border-color:#E0662F;color:#E0662F}
+    #rs-missing{display:none;position:absolute;inset:0;align-items:center;
+      justify-content:center;text-align:center;padding:24px;font-size:13.5px;
+      line-height:1.7;color:#A9B2B6;background:#12181C}
+    #rs-missing code{color:#E0662F;font-size:12.5px}
+    #rs-art-wrap.missing #rs-missing{display:flex}
+    #rs-tail{opacity:0;transform:translateY(18px)}
+    #rs-tail.up{opacity:1;transform:none;
+      transition:opacity .6s ease-out,transform .7s ease-out}
+    #rs-rare{margin-top:22px;padding:16px 18px;border:1px solid #242C31;
+      font-size:13.5px;color:#A9B2B6;line-height:1.7}
+    #rs-rare b{color:#F4F2ED;font-weight:700}
+    #rs-next{margin-top:42px}
+    #rs-next h2{font-size:20px;font-weight:700;letter-spacing:-.012em;margin:0}
+    #rs-next .hint{font-size:14px;color:#7C8589;margin:7px 0 0;line-height:1.7}
+    #rs-links{margin-top:20px;border-top:1px solid #242C31}
+    .rs-link{display:flex;gap:16px;align-items:center;padding:18px 0;
+      border-bottom:1px solid #242C31;text-decoration:none;color:inherit;
+      transition:padding-left .18s}
+    .rs-link:hover{padding-left:10px}
+    .rs-sw{position:relative;width:64px;height:64px;flex:none;overflow:hidden;
+      background-size:300% auto;background-repeat:no-repeat;background-color:#161B1F}
+    .rs-sw img{width:100%;height:100%;object-fit:cover;display:block}
+    .rs-sw img.gone{display:none}
+    .rs-t1{font-size:12px;color:#7C8589}
+    .rs-t2{font-size:16px;font-weight:700;margin-top:2px}
+    .rs-t3{font-size:13px;color:#4A5359;margin-top:3px}
+    #rs-share{margin-top:34px;display:flex;gap:10px;flex-wrap:wrap}
+    #rs-share button{padding:14px 20px;border:1px solid #242C31;border-radius:999px;
+      font-size:14px;background:none;color:#F4F2ED;cursor:pointer}
+    #rs-share button:hover{border-color:#F4F2ED}
+    #rs-again{margin-top:26px;font-size:13.5px;color:#7C8589;background:none;
+      border:0;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+    @media (prefers-reduced-motion:reduce){#result-slide *{transition:none!important}}
+
+    /* ── Nav arrows ── */
+    .nav-btn {
+      position: fixed;
+      top: clamp(16px, 3vw, 28px);
+      z-index: 100;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .nav-btn:hover { opacity: 1; }
+    .nav-btn svg { display: block; }
+    #nav-prev { left: clamp(16px, 3vw, 28px); }
+    #nav-next { right: clamp(16px, 3vw, 28px); }
+  </style>
+</head>
+<body>
+
+<!-- Navigation arrows -->
+<button id="nav-prev" class="nav-btn" onclick="goToSlide(currentSlide - 1)" aria-label="Previous">
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="18,6 10,14 18,22" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+<button id="nav-next" class="nav-btn" onclick="goToSlide(currentSlide + 1)" aria-label="Next">
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="10,6 18,14 10,22" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<div class="slides-container" id="slides">
+
+  <!-- ══════════ INTRO ══════════ -->
+  <div class="slide" id="slide-1" style="color:#F5F1EA;font-family:Pretendard,-apple-system,system-ui,sans-serif;">
+
+    <div style="position:absolute;left:50%;top:58%;width:120vw;height:70vh;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(159,231,255,.16),rgba(159,231,255,0) 72%);pointer-events:none;animation:om-glowpulse 9s ease-in-out infinite;"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;display:flex;flex-direction:column;animation:om-flicker 9s ease-in-out infinite,om-jolt 1.4s steps(4,end) infinite;-webkit-mask-image:radial-gradient(120% 96% at 50% 52%,rgba(0,0,0,.22) 0%,rgba(0,0,0,.55) 44%,#000 100%);mask-image:radial-gradient(120% 96% at 50% 52%,rgba(0,0,0,.22) 0%,rgba(0,0,0,.55) 44%,#000 100%);">
+      <div style="flex:0 0 10%;opacity:.52;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 14px,transparent 14px 52px,#EAF6FF 52px 60px,transparent 60px 118px,#EAF6FF 118px 166px,transparent 166px 196px,#EAF6FF 196px 204px,transparent 204px 262px,#EAF6FF 262px 300px,transparent 300px 320px);animation:om-run320 11s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 6%;opacity:.8;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 8px,transparent 8px 40px,#EAF6FF 40px 72px,transparent 72px 96px,#EAF6FF 96px 104px,transparent 104px 160px,#EAF6FF 160px 196px,transparent 196px 236px,#EAF6FF 236px 244px,transparent 244px 260px);animation:om-run260 7.5s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 9%;opacity:.68;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 40px,transparent 40px 96px,#EAF6FF 96px 104px,transparent 104px 180px,#EAF6FF 180px 232px,transparent 232px 268px,#EAF6FF 268px 276px,transparent 276px 352px,#EAF6FF 352px 400px,transparent 400px 420px);animation:om-run420 8s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 5%;opacity:.74;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 24px,transparent 24px 56px,#EAF6FF 56px 64px,transparent 64px 100px,#EAF6FF 100px 140px,transparent 140px 180px);animation:om-run180 2.9s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 11%;opacity:.8;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 14px,transparent 14px 52px,#EAF6FF 52px 60px,transparent 60px 118px,#EAF6FF 118px 166px,transparent 166px 196px,#EAF6FF 196px 204px,transparent 204px 262px,#EAF6FF 262px 300px,transparent 300px 320px);animation:om-run320 4.4s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 6%;opacity:.7;background-image:repeating-linear-gradient(90deg,#9FE7FF 0 8px,transparent 8px 40px,#9FE7FF 40px 72px,transparent 72px 96px,#9FE7FF 96px 104px,transparent 104px 160px,#9FE7FF 160px 196px,transparent 196px 236px,#9FE7FF 236px 244px,transparent 244px 260px);animation:om-run260 3s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 8%;opacity:.85;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 40px,transparent 40px 96px,#EAF6FF 96px 104px,transparent 104px 180px,#EAF6FF 180px 232px,transparent 232px 268px,#EAF6FF 268px 276px,transparent 276px 352px,#EAF6FF 352px 400px,transparent 400px 420px);animation:om-run420 3.6s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 5%;opacity:1;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 24px,transparent 24px 56px,#EAF6FF 56px 64px,transparent 64px 100px,#EAF6FF 100px 140px,transparent 140px 180px);animation:om-run180 1.5s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 10%;opacity:.94;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 14px,transparent 14px 52px,#EAF6FF 52px 60px,transparent 60px 118px,#EAF6FF 118px 166px,transparent 166px 196px,#EAF6FF 196px 204px,transparent 204px 262px,#EAF6FF 262px 300px,transparent 300px 320px);animation:om-run320 2.3s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 6%;opacity:.97;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 8px,transparent 8px 40px,#EAF6FF 40px 72px,transparent 72px 96px,#EAF6FF 96px 104px,transparent 104px 160px,#EAF6FF 160px 196px,transparent 196px 236px,#EAF6FF 236px 244px,transparent 244px 260px);animation:om-run260 1.5s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 9%;opacity:1;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 40px,transparent 40px 96px,#EAF6FF 96px 104px,transparent 104px 180px,#EAF6FF 180px 232px,transparent 232px 268px,#EAF6FF 268px 276px,transparent 276px 352px,#EAF6FF 352px 400px,transparent 400px 420px);animation:om-run420 1.8s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 5%;opacity:1;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 24px,transparent 24px 56px,#EAF6FF 56px 64px,transparent 64px 100px,#EAF6FF 100px 140px,transparent 140px 180px);animation:om-run180 .75s linear infinite;will-change:background-position;"></div>
+      <div style="flex:0 0 10%;opacity:1;background-image:repeating-linear-gradient(90deg,#EAF6FF 0 14px,transparent 14px 52px,#EAF6FF 52px 60px,transparent 60px 118px,#EAF6FF 118px 166px,transparent 166px 196px,#EAF6FF 196px 204px,transparent 204px 262px,#EAF6FF 262px 300px,transparent 300px 320px);animation:om-run320 1.05s linear infinite;will-change:background-position;"></div>
+      <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,rgba(7,9,13,.4) 0 2px,rgba(7,9,13,0) 2px 4px);animation:om-raster 2.4s linear infinite;"></div>
+    </div>
+    <div style="position:absolute;inset:-10%;opacity:.05;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.9) .5px,transparent .6px);background-size:3px 3px;animation:om-drift 14s linear infinite alternate;"></div>
+
+    <main style="position:relative;z-index:3;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:clamp(8px,2vh,24px) clamp(20px,6vw,96px);max-width:1160px;width:100%;box-sizing:border-box;margin:0 auto;">
+      <p style="margin:0 0 clamp(18px,2.6vw,30px);font-size:clamp(11px,1.1vw,13px);color:#9FE7FF;font-weight:600;animation:om-track 1.5s cubic-bezier(.16,1,.3,1) .35s both;">MOVEMENT THAT INSPIRES</p>
+
+      <h1 style="position:relative;margin:0;font-weight:700;letter-spacing:-.035em;line-height:1.16;font-size:clamp(38px,7.4vw,104px);">
+        <span style="display:block;overflow:hidden;padding-bottom:.06em;">
+          <span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.70s both;">W</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.76s both;">h</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.81s both;">e</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.87s both;">r</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 0.92s both;">e</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.03s both;">w</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.09s both;">i</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.14s both;">l</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.20s both;">l</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.30s both;">y</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.36s both;">o</span><span style="display:inline-block;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.41s both;">u</span>
+        </span>
+        <span style="display:block;overflow:hidden;padding-bottom:.06em;">
+          <span style="display:inline-block;color:#EAF6FF;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.34s both;">m</span><span style="display:inline-block;color:#EAF6FF;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.40s both;">o</span><span style="display:inline-block;color:#EAF6FF;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.46s both;">v</span><span style="display:inline-block;color:#EAF6FF;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.52s both;">e</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.64s both,om-breathe 5.5s ease-in-out 3.00s infinite;">i</span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.71s both,om-breathe 5.5s ease-in-out 3.12s infinite;">n</span><span style="display:inline-block;width:.28em;"></span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.85s both,om-breathe 5.5s ease-in-out 3.36s infinite;">2</span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.92s both,om-breathe 5.5s ease-in-out 3.48s infinite;">0</span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 1.99s both,om-breathe 5.5s ease-in-out 3.60s infinite;">2</span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 2.06s both,om-breathe 5.5s ease-in-out 3.72s infinite;">7</span><span style="display:inline-block;background:linear-gradient(92deg,#EAF6FF 12%,#9FE7FF 96%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:om-char 1.05s cubic-bezier(.19,1,.28,1) 2.13s both,om-breathe 5.5s ease-in-out 3.84s infinite;">?</span>
+        </span>
+        <span style="position:absolute;inset:-6% -12%;pointer-events:none;mix-blend-mode:screen;overflow:hidden;">
+          <span style="position:absolute;top:0;bottom:0;width:26%;background:linear-gradient(90deg,rgba(159,231,255,0),rgba(159,231,255,.20),rgba(255,255,255,.30),rgba(159,231,255,0));filter:blur(10px);opacity:0;animation:om-sweep 9s cubic-bezier(.5,0,.25,1) 2.2s infinite both;"></span>
+        </span>
+      </h1>
+
+      <div style="position:relative;height:1px;margin:clamp(28px,4.4vw,52px) 0 clamp(24px,3.4vw,38px);background:linear-gradient(90deg,rgba(245,241,234,.32),rgba(245,241,234,.06));transform-origin:left center;animation:om-line 1.5s cubic-bezier(.16,1,.3,1) 1.9s both;">
+        <span style="position:absolute;top:-1px;width:22%;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(159,231,255,0),#9FE7FF,rgba(159,231,255,0));filter:blur(.4px);animation:om-streak 5.2s cubic-bezier(.5,0,.3,1) 2.6s infinite;"></span>
+      </div>
+
+      <p style="margin:0;max-width:30ch;font-size:clamp(15px,1.9vw,22px);line-height:1.75;color:rgba(245,241,234,.66);text-wrap:pretty;animation:om-rise 1s cubic-bezier(.16,1,.3,1) 2.2s both;">
+        Six questions. One minute.<br>Find out where your movement leads.
+      </p>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:clamp(16px,2.4vw,28px);margin-top:clamp(30px,4.6vw,52px);animation:om-rise 1s cubic-bezier(.16,1,.3,1) 2.6s both;">
+        <button onclick="goToSlide(2)" class="cta-intro-dark" style="display:inline-flex;align-items:center;gap:14px;padding:18px clamp(26px,3vw,36px);border-radius:999px;background:#F5F1EA;color:#07090D;font-size:clamp(15px,1.5vw,17px);font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;font-family:Pretendard,-apple-system,system-ui,sans-serif;transition:background .25s ease,transform .25s ease,box-shadow .25s ease;box-shadow:0 0 0 rgba(159,231,255,0);">
+          <span>Start the minute</span>
+          <span style="display:inline-block;animation:om-arrow 1.8s ease-in-out infinite;">→</span>
+        </button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ══════════ Q1 ══════════ -->
+  <div class="slide" id="slide-2">
+    <svg id="q1-svg" xmlns="http://www.w3.org/2000/svg"
+         style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></svg>
+    <canvas id="q1-mask" style="display:none;position:absolute;"></canvas>
+    <div id="q1-content">
+      <div id="q1-inner">
+        <p class="question">In the last minute<br>before the new year,<br>what comes to mind?</p>
+        <div class="answers">
+          <button class="answer-btn" onclick="selectAnswer(this, 2)">
+            <span class="num">01</span>
+            <span class="answer-text">How far could I go next year?</span>
+          </button>
+          <button class="answer-btn" onclick="selectAnswer(this, 2)">
+            <span class="num">02</span>
+            <span class="answer-text">Good work this year — time to rest</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Q2 ══════════ -->
+  <div class="slide" id="slide-3">
+    <canvas id="q2-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></canvas>
+    <div id="q2-content">
+      <div id="q2-inner">
+        <p class="question">Everything on today&rsquo;s calendar<br>just got cancelled.<br>What do you do?</p>
+        <div class="answers">
+          <button class="answer-btn" onclick="selectAnswer(this, 3)">
+            <span class="num">01</span>
+            <span class="answer-text">Grab a coat — go find a neighborhood I&rsquo;ve never seen</span>
+          </button>
+          <button class="answer-btn" onclick="selectAnswer(this, 3)">
+            <span class="num">02</span>
+            <span class="answer-text">Back under the covers — I need to recharge</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Q3 ══════════ -->
+  <div class="slide" id="slide-4">
+    <canvas id="q3-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></canvas>
+    <div id="q3-content">
+      <div id="q3-inner">
+        <p class="question">This time next year,<br>what do you most want to hear?</p>
+        <div class="answers">
+          <button class="answer-btn" onclick="selectAnswer(this, 4)">
+            <span class="num">01</span>
+            <span class="answer-text">&ldquo;You saw and did so much this year&rdquo;</span>
+          </button>
+          <button class="answer-btn" onclick="selectAnswer(this, 4)">
+            <span class="num">02</span>
+            <span class="answer-text">&ldquo;You really took good care of yourself&rdquo;</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Q4 ══════════ -->
+  <div class="slide" id="slide-5">
+    <div id="fan-wrap"></div>
+    <p class="question">You just bought a new planner.<br>What comes first?</p>
+    <div class="answers">
+      <button class="answer-btn" onclick="selectAnswer(this, 5)">
+        <span class="num">01</span>
+        <span class="answer-text">Fill it in, month by month, from January</span>
+      </button>
+      <button class="answer-btn" onclick="selectAnswer(this, 5)">
+        <span class="num">02</span>
+        <span class="answer-text">One line on page one, then close it, satisfied</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ Q5 ══════════ -->
+  <div class="slide" id="slide-6">
+    <div id="pendulum-wrap" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+      <!-- 'no' right edge meets 'w' at peak left swing (L·sin30° = 57.74·0.5 = 28.87vh) -->
+      <span id="p-no" style="position:absolute;font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(48px,9.5vw,110px);color:rgba(255,255,255,0.92);top:50vh;right:calc(50% + 28.87vh + 0.30em);transform:translateY(-50%);white-space:nowrap;line-height:1;letter-spacing:-0.02em;">no</span>
+      <!-- 'here' left edge meets 'w' at peak right swing -->
+      <span id="p-here" style="position:absolute;font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(48px,9.5vw,110px);color:rgba(255,255,255,0.92);top:50vh;left:calc(50% + 28.87vh + 0.30em);transform:translateY(-50%);white-space:nowrap;line-height:1;letter-spacing:-0.02em;">here</span>
+      <!-- Arm length 57.74vh: bob at 50vh vertical center when angle=0, reaches ±28.87vh horizontal at ±30° -->
+      <div id="p-arm" style="position:absolute;left:50%;top:0;width:1.5px;height:57.74vh;background:rgba(255,255,255,0.4);transform-origin:top center;animation:swing 2.8s ease-in-out infinite alternate;will-change:transform;">
+        <span style="position:absolute;bottom:0;left:50%;transform:translate(-50%,50%);font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(48px,9.5vw,110px);color:rgba(255,255,255,0.95);white-space:nowrap;line-height:1;">w</span>
+      </div>
+      <!-- Nail dot at pivot -->
+      <div style="position:absolute;left:50%;top:0;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.6);transform:translate(-50%,0);"></div>
+    </div>
+    <p class="question">You&rsquo;re leaving on a trip<br>tomorrow. How do you pack?</p>
+    <div class="answers">
+      <button class="answer-btn" onclick="selectAnswer(this, 6)">
+        <span class="num">01</span>
+        <span class="answer-text">Map the route and the schedule first</span>
+      </button>
+      <button class="answer-btn" onclick="selectAnswer(this, 6)">
+        <span class="num">02</span>
+        <span class="answer-text">Just pack — figure out the rest on arrival</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ Q6 ══════════ -->
+  <div class="slide" id="slide-7">
+    <div id="plan-wrap"></div>
+    <p class="question">The plan you built so carefully<br>fell apart on day one.</p>
+    <div class="answers">
+      <button class="answer-btn" onclick="selectAnswer(this, 7)">
+        <span class="num">01</span>
+        <span class="answer-text">Switch to plan B</span>
+      </button>
+      <button class="answer-btn" onclick="selectAnswer(this, 7)">
+        <span class="num">02</span>
+        <span class="answer-text">Even better this way</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ RESULT ══════════ -->
+  <div class="slide" id="result-slide">
+    <div id="rs-wrap">
+      <div id="rs-card">
+        <div id="rs-art-wrap"><img id="rs-art" alt=""><div id="rs-hz"></div>
+          <p id="rs-missing">The result image could not be loaded.<br>
+             Check that the <code>assets/</code> folder was uploaded too.</p></div>
+        <img id="rs-body" alt="">
+      </div>
+      <div id="rs-tail">
+        <p id="rs-rare"></p>
+        <div id="rs-next">
+          <h2>Keep going this way</h2>
+          <p class="hint">Kia stories from the global site, matched to your type.</p>
+          <div id="rs-links"></div>
+        </div>
+        <div id="rs-share">
+          <button type="button" id="rs-save">Save as my own mandala</button>
+          <button type="button" id="rs-share-btn">Share</button>
+        </div>
+        <button type="button" id="rs-again">Try again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SHARE SHEET ══════════ -->
+  <div id="sh-back"></div>
+  <div id="sh" role="dialog" aria-modal="true" aria-label="Share">
+    <div class="hd"><h3>Share your result</h3><button class="cl" id="sh-close">Close</button></div>
+    <div class="grid">
+      <button data-go="image"><span class="ic">↓</span>Save image</button>
+      <button data-go="kakao"><span class="ic" style="background:#FEE500">K</span>KakaoTalk</button>
+      <button data-go="x"><span class="ic" style="background:#000;color:#fff">X</span>X</button>
+      <button data-go="fb"><span class="ic" style="background:#1877F2;color:#fff">f</span>Facebook</button>
+      <button data-go="threads"><span class="ic" style="background:#000;color:#fff">@</span>Threads</button>
+      <button data-go="copy"><span class="ic">↗</span>Copy link</button>
+    </div>
+    <p class="note" id="sh-note"></p>
+  </div>
+
+</div>
+
+<!-- Time-up overlay -->
+<div class="overlay" id="overlay">
+  <p class="overlay-text">Time&rsquo;s up.<br>What crossed your mind?</p>
+</div>
+
+<script>
+  // ── Slide state ──
+  let q1Selected = false;
+  let currentSlide = 1;
+
+  const overlay = document.getElementById('overlay');
+  const slides  = document.getElementById('slides');
+
+
+  // ── Q1 Zigzag SVG countdown ──
+  let q1AnimId = null;
+  (function () {
+    const svgEl     = document.getElementById('q1-svg');
+    const maskCv    = document.getElementById('q1-mask');
+    const maskCtx   = maskCv.getContext('2d');
+    const q1Content = document.getElementById('q1-content');
+
+    // Grid density scales with viewport width. The countdown numeral is sized
+    // as a share of the screen, so a fixed grid leaves too few cells per digit
+    // on narrow screens and the number turns to noise.
+    const GK      = Math.max(0.40, Math.min(1, window.innerWidth / 1180));
+    // On a phone the numeral would otherwise span 62% of a narrow screen and
+    // lose its shape, so it takes a smaller share of the width there.
+    const FSW     = window.innerWidth < 760 ? 0.46 : 0.62;
+    const LINE_H  = 36 * GK;
+    const GAP_X   = 28 * GK;
+    const OFF_X   = 14 * GK;
+    const BASE_W  = 2  * GK;
+    const MAX_M   = 22;
+    const BLUR    = 28 * GK;
+
+    const pool = [];
+    let   poolIdx = 0;
+
+    function getRect() {
+      if (poolIdx < pool.length) return pool[poolIdx++];
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      pool.push(r); svgEl.appendChild(r); poolIdx++;
+      return r;
+    }
+
+    let W = 0, H = 0, imgData = null;
+
+    function buildMask(num) {
+      maskCv.width = W; maskCv.height = H;
+      maskCtx.clearRect(0, 0, W, H);
+      const text = String(num).padStart(2, '0');
+      const fs   = Math.min(W * FSW, H * 0.58);
+      maskCtx.font         = `900 ${fs}px Nunito, monospace`;
+      maskCtx.textAlign    = 'center';
+      maskCtx.textBaseline = 'middle';
+      maskCtx.filter       = `blur(${BLUR}px)`;
+      maskCtx.fillStyle    = '#000';
+      maskCtx.fillText(text, W / 2, H / 2);
+      imgData = maskCtx.getImageData(0, 0, W, H);
+    }
+
+    function inten(x, y) {
+      if (!imgData) return 0;
+      const px = Math.floor(x), py = Math.floor(y);
+      if (px < 0 || px >= W || py < 0 || py >= H) return 0;
+      return imgData.data[(py * W + px) * 4 + 3] / 255;
+    }
+
+    function easeExpo(t) {
+      t = Math.max(0, Math.min(1, t));
+      if (t === 0 || t === 1) return t;
+      return t < 0.5
+        ? Math.pow(2, 20 * t - 10) / 2
+        : (2 - Math.pow(2, -20 * t + 10)) / 2;
+    }
+
+    function drawZigzag(zoom) {
+      const fs       = Math.min(W * FSW, H * 0.58);
+      const maxScale = Math.min(H / (fs * 1.5), W * 0.92 / (fs * 1.12), 3.5);
+      const scale    = 0.85 + (maxScale - 0.85) * zoom;
+
+      const viewW = W / scale, viewH = H / scale;
+      const viewX = W / 2 - viewW / 2, viewY = H / 2 - viewH / 2;
+      svgEl.setAttribute('viewBox', `${viewX} ${viewY} ${viewW} ${viewH}`);
+
+      const GAP_Y  = LINE_H + 2;
+      const extraR = Math.max(0, Math.ceil((viewH - H) / 2 / GAP_Y) + 3);
+      const extraC = Math.max(0, Math.ceil((viewW - W) / 2 / GAP_X) + 3);
+      const rows   = Math.ceil(H / GAP_Y) + extraR * 2;
+      const cols   = Math.ceil(W / GAP_X) + extraC * 2;
+      poolIdx = 0;
+
+      for (let ri = 0; ri < rows; ri++) {
+        const row    = ri - extraR;
+        const rowOff = Math.abs(row) % 2 === 1 ? OFF_X : 0;
+        const y      = row * GAP_Y;
+        let   ci     = 0;
+        while (ci < cols) {
+          const col = ci - extraC;
+          const x   = col * GAP_X + rowOff;
+          const itn = inten(x, y);
+          const w   = BASE_W * (1 + (MAX_M - 1) * itn * zoom);
+
+          if (w >= GAP_X) {
+            let endX = x + w / 2;
+            let nx   = ci + 1;
+            while (nx < cols) {
+              const nx2 = (nx - extraC) * GAP_X + rowOff;
+              const nw2 = BASE_W * (1 + (MAX_M - 1) * inten(nx2, y) * zoom);
+              if (nw2 >= GAP_X) { endX = nx2 + nw2 / 2; nx++; } else break;
+            }
+            const r = getRect();
+            r.setAttribute('x',      x - w / 2);
+            r.setAttribute('y',      y - LINE_H / 2);
+            r.setAttribute('width',  endX - (x - w / 2));
+            r.setAttribute('height', LINE_H);
+            r.setAttribute('fill',   '#ffffff');
+            ci = nx;
+          } else {
+            const r = getRect();
+            r.setAttribute('x',      x - w / 2);
+            r.setAttribute('y',      y - LINE_H / 2);
+            r.setAttribute('width',  w);
+            r.setAttribute('height', LINE_H);
+            r.setAttribute('fill',   '#ffffff');
+            ci++;
+          }
+        }
+      }
+      for (let i = poolIdx; i < pool.length; i++) pool[i].setAttribute('width', '0');
+    }
+
+    let countdown   = 60;
+    let secondStart = null;
+
+    function q1Frame(ts) {
+      if (q1Selected) return;
+      if (secondStart === null) secondStart = ts;
+
+      const elapsed = ts - secondStart;
+      const t       = Math.min(elapsed / 1000, 1);
+      let   zoom;
+      if      (t < 0.38) zoom = easeExpo(t / 0.38);
+      else if (t < 0.65) zoom = 1;
+      else               zoom = 1 - easeExpo((t - 0.65) / 0.35);
+
+      drawZigzag(zoom);
+
+      if (elapsed >= 1000) {
+        countdown--;
+        secondStart = ts;
+        if (countdown < 0) {
+          pool.forEach(r => r.setAttribute('width', '0'));
+          svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+          return;
+        }
+        buildMask(countdown);
+      }
+
+      q1AnimId = requestAnimationFrame(q1Frame);
+    }
+
+    function initQ1() {
+      const slide = document.getElementById('slide-2');
+      W = slide.offsetWidth; H = slide.offsetHeight;
+      svgEl.setAttribute('width', W);
+      svgEl.setAttribute('height', H);
+      svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      buildMask(countdown);
+      q1AnimId = requestAnimationFrame(q1Frame);
+    }
+
+    window.addEventListener('resize', () => {
+      const slide = document.getElementById('slide-2');
+      W = slide.offsetWidth; H = slide.offsetHeight;
+      svgEl.setAttribute('width', W);
+      svgEl.setAttribute('height', H);
+      buildMask(countdown);
+    });
+
+    initQ1();
+  }());
+
+  // ── Answer selection ──
+  const ANSWERS = [];            // 0 = first option, 1 = second option
+
+  function selectAnswer(btn, slideNum) {
+    const slide = document.getElementById(`slide-${slideNum}`);
+    const btns  = Array.from(slide.querySelectorAll('.answer-btn'));
+    btns.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    btn.blur();                    // 포커스가 남으면 body 가 그쪽으로 스크롤된다
+
+    ANSWERS[slideNum - 2] = btns.indexOf(btn);   // slide-2 is Q1
+
+    if (slideNum === 2) {  // Q1
+      q1Selected = true;
+      if (q1AnimId) cancelAnimationFrame(q1AnimId);
+    }
+
+    if (slideNum === 7) {          // Q6 = final question
+      setTimeout(finishQuiz, 600);
+      return;
+    }
+    setTimeout(() => goToSlide(slideNum + 1), 600);
+  }
+
+  function goToSlide(n) {
+    const total = document.querySelectorAll('.slide').length;
+    if (n < 1 || n > total) return;
+    currentSlide = n;
+    slides.style.transform = `translateY(-${(n - 1) * 100}vh)`;
+    if (n === 3) setTimeout(startQ2, 400);   // Q2
+    if (n === 4) setTimeout(startQ3, 400);   // Q3
+    if (n === 5) setTimeout(startFan, 400);  // Q4
+    if (n === 6) setTimeout(startPendulum, 400);  // Q5
+    if (n === 7) setTimeout(startPlan, 400);  // Q6
+  }
+
+  // ── Q2 Ring of words — tilted circle (70° vertical tilt, 30° screen slope) ──
+  let q2Started = false;
+
+  function startQ2() {
+    if (q2Started) return;
+    q2Started = true;
+
+    const canvas = document.getElementById('q2-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const WORDS_BASE = ['free', 'alone', 'recharge', 'walk', 'street', 'blanket', 'rest', 'nap',
+                        'still', 'slow', 'quiet', 'easy', 'drift', 'coffee', 'reading', 'music',
+                        'wind', 'sunlight', 'window', 'series', 'games', 'doodle', 'wander',
+                        'pause', 'breathe', 'empty', 'bed', 'solitude', 'calm', 'unhurried'];
+    // Circle tilted 70° around horizontal axis → ry = R * cos(70°)
+    const TILT   = 70 * Math.PI / 180;
+    // Entire ring rotated 30° clockwise on screen
+    const SLOPE  = 30 * Math.PI / 180;
+    const cosT   = Math.cos(TILT);  // ≈ 0.34  (vertical compression)
+    const cosS   = Math.cos(SLOPE);
+    const sinS   = Math.sin(SLOPE);
+
+    // Compute word count so words are ~2px apart along the ellipse circumference
+    function buildWordList() {
+      const W = canvas.width, H = canvas.height;
+      const R  = Math.min(W, H) * 0.38;
+      const rx = R, ry = R * cosT;
+      // Ramanujan approximation for ellipse circumference
+      const circ = Math.PI * (3*(rx+ry) - Math.sqrt((3*rx+ry)*(rx+3*ry)));
+      ctx.font = '700 20px "Noto Sans KR", sans-serif';
+      const avgW = WORDS_BASE.reduce((s, w) => s + ctx.measureText(w).width, 0) / WORDS_BASE.length;
+      const needed = Math.max(WORDS_BASE.length, Math.ceil(circ / (avgW + 2)));
+      const repeats = Math.ceil(needed / WORDS_BASE.length);
+      return Array(repeats).fill(WORDS_BASE).flat();
+    }
+
+    let WORDS = buildWordList();
+    let N = WORDS.length;
+
+    // Recompute on resize
+    const origResize = window.onresize;
+    window.addEventListener('resize', () => {
+      WORDS = buildWordList();
+      N = WORDS.length;
+    });
+
+    let angleOffset = 0; // radians, increases each frame
+
+    function frame() {
+      angleOffset += 0.0035;
+      const W = canvas.width, H = canvas.height;
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, W, H);
+
+      const R  = Math.min(W, H) * 0.38;
+      const cx = W * 0.5;
+      const cy = H * 0.5;
+
+      // Build item list with depth for back-to-front draw order
+      const items = [];
+      for (let i = 0; i < N; i++) {
+        const theta = (i / N) * Math.PI * 2 + angleOffset;
+        // 3D: circle in XZ plane, tilt 70° around X axis
+        const lx = R * Math.cos(theta);          // local X (horizontal)
+        const ly = -R * Math.sin(theta) * cosT;  // local Y (compressed vertical)
+        const depth = R * Math.sin(theta);        // +front, -back
+
+        // Rotate by SLOPE on screen
+        const sx = cx + lx * cosS - ly * sinS;
+        const sy = cy + lx * sinS + ly * cosS;
+
+        const depthNorm = depth / R;              // -1 … +1
+        const scale = 0.55 + 0.45 * (depthNorm + 1) * 0.5;
+        const alpha = 0.15 + 0.85 * (depthNorm + 1) * 0.5;
+
+        // Radial direction snapped to 12 clock-tick steps (30° each)
+        const TICK_STEPS = 120;  // 360/120 = 3° per snap
+        const rawAngle  = Math.atan2(sy - cy, sx - cx);
+        const wordAngle = Math.floor(rawAngle / (Math.PI * 2 / TICK_STEPS)) * (Math.PI * 2 / TICK_STEPS);
+
+        items.push({ word: WORDS[i], x: sx, y: sy, depth, scale, alpha, wordAngle });
+      }
+
+      // Draw back → front
+      items.sort((a, b) => a.depth - b.depth);
+
+      for (const it of items) {
+        const fs = Math.round(26 * it.scale);
+        ctx.save();
+        ctx.translate(it.x, it.y);
+        ctx.rotate(it.wordAngle);  // point radially outward like a clock hand
+        ctx.font         = `700 ${fs}px 'Noto Sans KR', sans-serif`;
+        ctx.fillStyle    = `rgba(255,255,255,${it.alpha.toFixed(2)})`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'center';
+        ctx.fillText(it.word, 0, 0);
+        ctx.restore();
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // ── Q3 Elliptical orbit scrolling list ──
+  let q3Started = false;
+
+  function startQ3() {
+    if (q3Started) return;
+    q3Started = true;
+
+    const canvas = document.getElementById('q3-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const MESSAGES = [
+      'well done', 'you can do it', 'good things are coming', 'keep going',
+      'hang in there', "you're doing great", "it's okay", "you'll be fine",
+      'I believe you', "you're the best", 'incredible', 'thanks for holding on',
+    ];
+    const N      = MESSAGES.length;
+    const LINE_H = 36;
+    const SPEED  = 0.6;
+
+    let scrollY = 0;
+    const TOTAL = N * LINE_H;
+
+    function frame() {
+      scrollY = (scrollY + SPEED) % TOTAL;
+
+      const W = canvas.width, H = canvas.height;
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, W, H);
+
+      const DOT_X    = W * 0.42;
+      const DOT_Y    = H * 0.50;
+      const R_CIRCLE = H * 1.2;   // large radius → gentle curve
+      const CX       = DOT_X - R_CIRCLE;  // circle center far to the left
+
+      for (let rep = -1; rep <= 2; rep++) {
+        for (let i = 0; i < N; i++) {
+          // arc position = linear distance from dot (positive = below)
+          const arcPos = (i * LINE_H + rep * TOTAL) - scrollY;
+          const theta  = arcPos / R_CIRCLE;  // angle on circle
+
+          if (Math.abs(theta) > Math.PI * 0.58) continue;
+
+          const cosA = Math.cos(theta);
+          if (cosA <= 0) continue;
+
+          const x = CX + R_CIRCLE * cosA;
+          const y = DOT_Y + R_CIRCLE * Math.sin(theta);
+
+          if (y < -LINE_H * 2 || y > H + LINE_H * 2) continue;
+
+          const fs     = Math.round(10 + 17 * cosA);
+          const alpha  = (0.15 + 0.85 * cosA).toFixed(2);
+          const weight = cosA > 0.85 ? 700 : 400;
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(theta);   // items tilt with the circle arc (CCW above dot, CW below)
+          ctx.font         = `${weight} ${fs}px 'KiaSignature','Pretendard',sans-serif`;
+          ctx.fillStyle    = `rgba(255,255,255,${alpha})`;
+          ctx.textBaseline = 'middle';
+          ctx.textAlign    = 'left';
+          ctx.fillText(MESSAGES[i], 10 + 20 * cosA, 0);  // base gap + extra 20px push at dot level
+          ctx.restore();
+        }
+      }
+
+      // Blue dot (on top of text)
+      ctx.beginPath();
+      ctx.arc(DOT_X, DOT_Y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#2563eb';
+      ctx.fill();
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // ── Q5 Pendulum: CSS @keyframes handles animation (see #p-arm in HTML) ──
+  function startPendulum() {}
+
+  let fanStarted = false;
+  let fanAnimId  = null;
+
+  function startFan() {
+    if (fanStarted) return;
+    fanStarted = true;
+
+    const wrap = document.getElementById('fan-wrap');
+    wrap.innerHTML = '';
+
+    const leftLine = document.createElement('div');
+    leftLine.className = 'fan-line-base';
+    wrap.appendChild(leftLine);
+
+    const rightLine = document.createElement('div');
+    rightLine.className = 'fan-line-base';
+    wrap.appendChild(rightLine);
+
+    const IRREGULAR_ANGLES = [-165, -142, -118, -92, -65, -42, -22, -8];
+    const NUM_INNER = IRREGULAR_ANGLES.length;
+    const innerLines = [];
+
+    for (let i = 0; i < NUM_INNER; i++) {
+      const el = document.createElement('div');
+      el.className = 'fan-line-inner';
+      wrap.appendChild(el);
+      innerLines.push(el);
+    }
+
+    const startTime = performance.now();
+    const T_OPEN  = 1200;
+    const T_FLOW  = 2600;
+    const T_CLOSE = 1400;
+    const T_PAUSE = 500;
+    const CYCLE_TOTAL = T_OPEN + T_FLOW + T_CLOSE + T_PAUSE;
+
+    function animateFan(now) {
+      const elapsed = now - startTime;
+      const cycleTime = elapsed % CYCLE_TOTAL;
+
+      if (cycleTime < T_OPEN) {
+        const p = cycleTime / T_OPEN;
+        const ease = 1 - Math.pow(1 - p, 3);
+
+        leftLine.style.transform = 'rotate(-180deg)';
+        leftLine.style.opacity = (ease * 0.9).toFixed(2);
+
+        const rightAngle = -180 + 180 * ease;
+        rightLine.style.transform = `rotate(${rightAngle.toFixed(2)}deg)`;
+        rightLine.style.opacity = (ease * 0.9).toFixed(2);
+
+        for (let i = 0; i < NUM_INNER; i++) {
+          const targetAngle = IRREGULAR_ANGLES[i];
+          const lineDelay = (i + 1) * 0.05;
+          const lineP = Math.max(0, Math.min(1, (p - lineDelay) / (1 - lineDelay)));
+          const lineEase = 1 - Math.pow(1 - lineP, 3);
+          const curAngle = -180 + (targetAngle - (-180)) * lineEase;
+          const alpha = lineEase * Math.sin((-curAngle / 180) * Math.PI) * 0.9;
+          innerLines[i].style.transform = `rotate(${curAngle.toFixed(2)}deg)`;
+          innerLines[i].style.opacity = Math.max(0, alpha).toFixed(2);
+        }
+
+      } else if (cycleTime < T_OPEN + T_FLOW) {
+        leftLine.style.transform = 'rotate(-180deg)';
+        leftLine.style.opacity = '0.9';
+        rightLine.style.transform = 'rotate(0deg)';
+        rightLine.style.opacity = '0.9';
+
+        const flowElapsed = cycleTime - T_OPEN;
+        const SPEED = 0.035;
+
+        for (let i = 0; i < NUM_INNER; i++) {
+          let angle = IRREGULAR_ANGLES[i] + flowElapsed * SPEED;
+          let norm = ((angle + 180) % 180);
+          if (norm < 0) norm += 180;
+          let curAngle = -180 + norm;
+          let alpha = Math.sin((-curAngle / 180) * Math.PI) * 0.9;
+          innerLines[i].style.transform = `rotate(${curAngle.toFixed(2)}deg)`;
+          innerLines[i].style.opacity = Math.max(0, alpha).toFixed(2);
+        }
+
+      } else if (cycleTime < T_OPEN + T_FLOW + T_CLOSE) {
+        const closeElapsed = cycleTime - (T_OPEN + T_FLOW);
+        const p = closeElapsed / T_CLOSE;
+        const ease = Math.pow(p, 2.2);
+
+        const coverAngle = -180 + 180 * ease;
+        leftLine.style.transform = `rotate(${coverAngle.toFixed(2)}deg)`;
+        leftLine.style.opacity = '0.9';
+        rightLine.style.transform = 'rotate(0deg)';
+        rightLine.style.opacity = '0.9';
+
+        const SPEED = 0.035;
+        const flowAtCloseStart = T_FLOW;
+
+        for (let i = 0; i < NUM_INNER; i++) {
+          let angle = IRREGULAR_ANGLES[i] + (flowAtCloseStart + closeElapsed * 0.5) * SPEED;
+          let norm = ((angle + 180) % 180);
+          if (norm < 0) norm += 180;
+          let curAngle = -180 + norm;
+
+          if (curAngle < coverAngle) {
+            innerLines[i].style.opacity = '0';
+          } else {
+            let alpha = Math.sin((-curAngle / 180) * Math.PI) * 0.9 * (1 - ease);
+            innerLines[i].style.transform = `rotate(${curAngle.toFixed(2)}deg)`;
+            innerLines[i].style.opacity = Math.max(0, alpha).toFixed(2);
+          }
+        }
+
+      } else {
+        leftLine.style.transform = 'rotate(0deg)';
+        leftLine.style.opacity = '0.9';
+        rightLine.style.transform = 'rotate(0deg)';
+        rightLine.style.opacity = '0.9';
+        for (let i = 0; i < NUM_INNER; i++) {
+          innerLines[i].style.opacity = '0';
+        }
+      }
+
+      fanAnimId = requestAnimationFrame(animateFan);
+    }
+
+    fanAnimId = requestAnimationFrame(animateFan);
+  }
+
+  // ── Q6 'PLAN' letter scatter & staccato assembly animation ──
+  let planStarted = false;
+  let planAnimId  = null;
+
+  function startPlan() {
+    if (planStarted) return;
+    planStarted = true;
+
+    const wrap = document.getElementById('plan-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    // 'PLAN A' — five letters scatter, then reassemble.
+    // sz = resting size. Different per letter, so the word has an uneven rhythm.
+    const JAMO_DATA = [
+      { char:'P', sz:1.34, homeX:-1.46, homeY:-0.11, decompX:-2.02, decompY:-0.58, decompRot:-15 },
+      { char:'L', sz:0.74, homeX:-0.82, homeY: 0.15, decompX:-0.34, decompY: 0.48, decompRot: 12 },
+      { char:'A', sz:1.12, homeX:-0.22, homeY:-0.16, decompX: 0.28, decompY:-0.64, decompRot: 18 },
+      { char:'N', sz:0.86, homeX: 0.34, homeY: 0.14, decompX: 0.92, decompY: 0.42, decompRot:-12 },
+      { char:'A', sz:1.50, homeX: 1.58, homeY:-0.06, decompX: 2.16, decompY:-0.26, decompRot: 20 },
+    ];
+
+    const elements = [];
+    JAMO_DATA.forEach(item => {
+      const el = document.createElement('span');
+      el.className = 'jamo-char';
+      el.textContent = item.char;
+      wrap.appendChild(el);
+      elements.push({ el, item });
+    });
+
+    const SCATTER_STEPS = 6;
+    const scatterOffsets = JAMO_DATA.map(() => {
+      const steps = [];
+      for (let s = 0; s < SCATTER_STEPS; s++) {
+        steps.push({
+          dx: (Math.random() - 0.5) * 34,
+          dy: (Math.random() - 0.5) * 26,
+          rot: Math.round((Math.random() - 0.5) * 180 / 15) * 15,
+          scale: 0.75 + Math.random() * 0.5,
+        });
+      }
+      return steps;
+    });
+
+    const startTime = performance.now();
+    const T_HOLD      = 700;
+    const T_DECOMPOSE = 800;
+    const T_SCATTER   = 2300;
+    const T_ASSEMBLE  = 1200;
+    const T_END_HOLD  = 600;
+    const CYCLE_TOTAL = T_HOLD + T_DECOMPOSE + T_SCATTER + T_ASSEMBLE + T_END_HOLD;
+
+    function animatePlan(now) {
+      const elapsed = now - startTime;
+      const cycleTime = elapsed % CYCLE_TOTAL;
+
+      if (cycleTime < T_HOLD) {
+        elements.forEach(({ el, item }) => {
+          el.style.transform = `translate(${item.homeX}em, ${item.homeY}em) rotate(0deg) scale(${item.sz})`;
+          el.style.opacity = '0.95';
+        });
+
+      } else if (cycleTime < T_HOLD + T_DECOMPOSE) {
+        const p = (cycleTime - T_HOLD) / T_DECOMPOSE;
+        const stepP = Math.floor(p * 3) / 3;
+        const ease = 1 - Math.pow(1 - stepP, 2);
+
+        elements.forEach(({ el, item }) => {
+          const curX = item.homeX + (item.decompX - item.homeX) * ease;
+          const curY = item.homeY + (item.decompY - item.homeY) * ease;
+          const curRot = item.decompRot * ease;
+          el.style.transform = `translate(${curX.toFixed(2)}em, ${curY.toFixed(2)}em) rotate(${curRot.toFixed(1)}deg) scale(${item.sz})`;
+          el.style.opacity = '0.92';
+        });
+
+      } else if (cycleTime < T_HOLD + T_DECOMPOSE + T_SCATTER) {
+        const scatterTime = cycleTime - (T_HOLD + T_DECOMPOSE);
+        const stepIdx = Math.floor(scatterTime / 130) % SCATTER_STEPS;
+
+        elements.forEach(({ el, item }, i) => {
+          const step = scatterOffsets[i][stepIdx];
+          const curX = item.decompX + step.dx / 30;
+          const curY = item.decompY + step.dy / 30;
+          el.style.transform = `translate(${curX.toFixed(2)}em, ${curY.toFixed(2)}em) rotate(${step.rot}deg) scale(${(step.scale * item.sz).toFixed(2)})`;
+          el.style.opacity = (0.75 + Math.random() * 0.2).toFixed(2);
+        });
+
+      } else if (cycleTime < T_HOLD + T_DECOMPOSE + T_SCATTER + T_ASSEMBLE) {
+        const snapTime = cycleTime - (T_HOLD + T_DECOMPOSE + T_SCATTER);
+        const p = snapTime / T_ASSEMBLE;
+        const stepP = Math.floor(p * 4) / 4;
+        const ease = 1 - Math.pow(1 - stepP, 3);
+        const lastStepIdx = SCATTER_STEPS - 1;
+
+        elements.forEach(({ el, item }, i) => {
+          const lastStep = scatterOffsets[i][lastStepIdx];
+          const startX = item.decompX + lastStep.dx / 30;
+          const startY = item.decompY + lastStep.dy / 30;
+          const curX = startX + (item.homeX - startX) * ease;
+          const curY = startY + (item.homeY - startY) * ease;
+          const curRot = lastStep.rot * (1 - ease);
+          const curScale = (lastStep.scale + (1 - lastStep.scale) * ease) * item.sz;
+          el.style.transform = `translate(${curX.toFixed(2)}em, ${curY.toFixed(2)}em) rotate(${curRot.toFixed(1)}deg) scale(${curScale.toFixed(2)})`;
+          el.style.opacity = (0.75 + 0.2 * ease).toFixed(2);
+        });
+
+      } else {
+        elements.forEach(({ el, item }) => {
+          el.style.transform = `translate(${item.homeX}em, ${item.homeY}em) rotate(0deg) scale(${item.sz})`;
+          el.style.opacity = '0.95';
+        });
+      }
+
+      planAnimId = requestAnimationFrame(animatePlan);
+    }
+
+    planAnimId = requestAnimationFrame(animatePlan);
+  }
+
+  startPlan();
+
+
+  /* ══════════════════════════════════════════════════════════
+     Result — Q1-3 set the purpose axis (E explore / R rest),
+              Q4-6 set the rhythm axis (P plan / F flow).
+              Majority wins on each axis.
+     ══════════════════════════════════════════════════════════ */
+  const RS_META = {"bw": {"RP": {"hz": 0.5, "art": [760, 798], "body": [760, 718]}, "EF": {"hz": 0.5, "art": [760, 696], "body": [760, 819]}, "RF": {"hz": 0.5, "art": [760, 740], "body": [760, 776]}, "EP": {"hz": 0.5, "art": [760, 676], "body": [760, 840]}}, "col": {"RP": {"hz": 0.6765, "art": [760, 754], "body": [760, 762]}, "EF": {"hz": 0.624, "art": [760, 750], "body": [760, 765]}, "RF": {"hz": 0.585, "art": [760, 750], "body": [760, 765]}, "EP": {"hz": 0.551, "art": [760, 765], "body": [760, 750]}}};
+
+  const RS_TYPE = {
+    // [category, title, blurb, Kia page URL, local filename, Kia source image]
+    // Thumbnails try assets/link/<name>.jpg first, then the Kia source image,
+    // then fall back to a crop of the result image.
+    RP:{ kr:'The Wellness Architect', share:14,
+         links:[['Future city','Smart City','A city planned around where people rest',
+                 'https://worldwide.kia.com/en/innovation/smart-city','smartcity',
+                 'https://worldwide.kia.com/asset/image/innovation/smart-city/smart-city-intro.webp'],
+                ['Future mobility','Kia PBV','A moving space built for the time you stay in',
+                 'https://worldwide.kia.com/en/vehicle/lineup/pbv','pbv',
+                 'https://worldwide.kia.com/asset/image/pbv-styleguide/pbv-intro.webp']] },
+    RF:{ kr:'The Spontaneous Rest-Seeker', share:11,
+         links:[['Sustainability','The Ocean Cleanup','A project moving at the speed of the sea',
+                 'https://worldwide.kia.com/en/brand/our-movement/social-impact/the-ocean-cleanup','ocean',
+                 'https://worldwide.kia.com/asset/image/the-ocean-cleanup/the-ocean-cleanup-outro.webp'],
+                ['Design','Opposites United','Form built from contrasts that collide',
+                 'https://worldwide.kia.com/en/design/design-philosophy/opposites-united','ou',
+                 'https://worldwide.kia.com/asset/image/opposites-united/opposites-united-outro.webp']] },
+    EP:{ kr:'The Long-Range Planner', share:9,
+         links:[['Future city','Smart City','Rethinking the journey, not just the arrival',
+                 'https://worldwide.kia.com/en/innovation/smart-city','smartcity',
+                 'https://worldwide.kia.com/asset/image/innovation/smart-city/smart-city-intro.webp'],
+                ['Technology','E-GMP Platform','What changed so you could go further',
+                 'https://worldwide.kia.com/en/innovation/performance/platform','platform',
+                 'https://worldwide.kia.com/asset/image/innovation/performance/platform/platform-drive-pc.webp']] },
+    EF:{ kr:'The Mapless Collector', share:6,
+         links:[['Technology','E-GMP Platform','Built small enough for the narrowest street',
+                 'https://worldwide.kia.com/en/innovation/performance/platform','platform',
+                 'https://worldwide.kia.com/asset/image/innovation/performance/platform/platform-drive-pc.webp'],
+                ['Design','Opposites United','Why we choose forms that break convention',
+                 'https://worldwide.kia.com/en/design/design-philosophy/opposites-united','ou',
+                 'https://worldwide.kia.com/asset/image/opposites-united/opposites-united-outro.webp']] },
+  };
+
+  // 슬라이드는 translateY 로만 움직인다. body 가 스크롤되면 전부 어긋난다.
+  function pinScroll(){
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+  document.body.addEventListener('scroll', pinScroll, { passive:true });
+  window.addEventListener('resize', pinScroll);
+
+  function resultCode(){
+    // Option 01 is always the E / P side.
+    const e = [0,1,2].filter(i => ANSWERS[i] === 0).length;
+    const p = [3,4,5].filter(i => ANSWERS[i] === 0).length;
+    return (e >= 2 ? 'E' : 'R') + (p >= 2 ? 'P' : 'F');
+  }
+
+  function finishQuiz(){
+    overlay.classList.add('visible');            // time-up overlay
+    setTimeout(() => {
+      const total = document.querySelectorAll('.slide').length;
+      goToSlide(total);                          // jump to the result slide
+      pinScroll();
+      document.getElementById('result-slide').scrollTop = 0;
+      setTimeout(() => overlay.classList.remove('visible'), 260);
+      renderResult();
+    }, 1900);
+  }
+
+  // Filled with base64 in the standalone build. Empty here means plain relative paths.
+  const ASSET = {};
+  function A(p){ return ASSET[p] || p; }
+
+  let RS_CODE = null, RS_KIND = 'bw';
+
+  // place one card set (pattern or mandala) on screen
+  function applyCard(code, kind){
+    const m    = RS_META[kind][code];
+    const art  = document.getElementById('rs-art');
+    const body = document.getElementById('rs-body');
+    const line = document.getElementById('rs-hz');
+    const wrap = document.getElementById('rs-art-wrap');
+    const src  = A('assets/' + code + '_' + kind + '_art.png');
+    const hz   = (m.hz * 100).toFixed(2) + '%';
+
+    art.onerror = function(){ wrap.classList.add('missing'); };
+    art.onload  = function(){ wrap.classList.remove('missing'); };
+    art.src  = src;
+    body.src = A('assets/' + code + '_' + kind + '_body.png');
+    wrap.style.aspectRatio = m.art[0] + '/' + m.art[1];
+    [wrap, art, line].forEach(el => el.style.setProperty('--hz', hz));
+
+    const pos = ['4% 8%', '88% 74%'];
+    document.querySelectorAll('#rs-links .rs-sw').forEach((sw, i) => {
+      sw.style.backgroundImage = 'url(' + src + ')';
+      sw.style.backgroundPosition = pos[i] || '40% 40%';
+    });
+    prepFile();                     // build the share image ahead of time
+    return src;
+  }
+
+  // saving = the pattern folds to the horizon, then reopens as your mandala
+  function toMandala(){
+    if (RS_KIND === 'col') return;
+    RS_KIND = 'col';
+    const art  = document.getElementById('rs-art');
+    const body = document.getElementById('rs-body');
+    const line = document.getElementById('rs-hz');
+    const btn  = document.getElementById('rs-save');
+
+    line.classList.remove('gone'); line.classList.add('draw');
+    art.classList.remove('open');
+    body.classList.remove('up');
+
+    setTimeout(() => applyCard(RS_CODE, 'col'), 620);
+    setTimeout(() => art.classList.add('open'), 700);
+    setTimeout(() => line.classList.add('gone'), 1020);
+    setTimeout(() => body.classList.add('up'), 1180);
+    setTimeout(pinScroll, 1300);
+
+    btn.classList.add('done');
+    btn.textContent = 'Saved — your own mandala';
+  }
+
+  function renderResult(){
+    const code = resultCode();
+    RS_CODE = code; RS_KIND = 'bw';
+    try { history.replaceState(null, '', '?type=' + code); } catch (e) {}
+    const t = RS_TYPE[code];
+
+    const art  = document.getElementById('rs-art');
+    const body = document.getElementById('rs-body');
+    const line = document.getElementById('rs-hz');
+
+    document.getElementById('rs-rare').innerHTML =
+      '<b>' + t.share + '%</b> of participants got &ldquo;' + t.kr + '&rdquo;. ' +
+      'All six choices have to match for the image to match too, so only <b>1.6%</b> received exactly this one.';
+
+    const box = document.getElementById('rs-links');
+    box.innerHTML = '';
+    t.links.forEach(function(L){
+      const a = document.createElement('a');
+      a.className = 'rs-link'; a.href = L[3];
+      a.target = '_blank'; a.rel = 'noopener';
+      a.innerHTML =
+        '<div class="rs-sw"></div>' +
+        '<div><div class="rs-t1">' + L[0] + '</div><div class="rs-t2">' + L[1] +
+        '</div><div class="rs-t3">' + L[2] + '</div></div>';
+      const im = document.createElement('img');
+      im.alt = '';
+      im.dataset.remote = L[5] || '';
+      im.onerror = function(){
+        if (this.dataset.remote && this.src !== this.dataset.remote) {
+          this.src = this.dataset.remote;          // retry with the Kia source image
+        } else {
+          this.classList.add('gone');              // fall back to the result-image crop
+        }
+      };
+      im.src = A('assets/link/' + L[4] + '.jpg');
+      a.querySelector('.rs-sw').appendChild(im);
+      box.appendChild(a);
+    });
+    applyCard(code, 'bw');
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      art.classList.add('open'); body.classList.add('up');
+      document.getElementById('rs-tail').classList.add('up');
+      return;
+    }
+    // horizon draws → opens outward → body panel rises
+    setTimeout(() => line.classList.add('draw'), 260);
+    setTimeout(() => art.classList.add('open'), 560);
+    setTimeout(() => line.classList.add('gone'), 860);
+    setTimeout(() => body.classList.add('up'), 1060);
+    setTimeout(() => document.getElementById('rs-tail').classList.add('up'), 1420);
+    [0, 300, 900, 1600].forEach(t => setTimeout(pinScroll, t));
+  }
+
+  document.getElementById('rs-again').onclick = function(){ location.reload(); };
+  document.getElementById('rs-save').onclick = toMandala;
+  /* ══════════════════════════════════════════════════════════
+     Share — the result type stays in the URL and gets its own preview image.
+             share/<code>.html carries the og tags and bounces back to the app.
+     ══════════════════════════════════════════════════════════ */
+  // KakaoTalk sharing — drop in a JavaScript key to enable it (empty string = off)
+  const KAKAO_KEY = '';
+  if (KAKAO_KEY) {
+    const ks = document.createElement('script');
+    ks.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+    ks.integrity = 'sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4';
+    ks.crossOrigin = 'anonymous';
+    ks.onload = function(){ window.Kakao.init(KAKAO_KEY); };
+    document.head.appendChild(ks);
+  }
+
+  const SHARE_TEXT = {
+    RP:'The Quiet Road — The Wellness Architect',
+    RF:'The Open Road — The Spontaneous Rest-Seeker',
+    EP:'The Long Way — The Long-Range Planner',
+    EF:'Unmapped Road — The Mapless Collector',
+  };
+
+  function shareUrl(){
+    const base = location.href.split('?')[0].split('#')[0]
+                 .replace(/[^/]*$/, '');            // current directory
+    return base + 'share/' + RS_CODE + '.html';
+  }
+  function shareMsg(){
+    return 'The Last Minute — ' + (SHARE_TEXT[RS_CODE] || '') +
+           '\nWhere will you move in 2027?';
+  }
+
+  // stitch the two card images into one file
+  function cardBlob(){
+    return new Promise(function(res, rej){
+      const art = document.getElementById('rs-art');
+      const body = document.getElementById('rs-body');
+      if (!art.naturalWidth || !body.naturalWidth) return rej('not ready');
+      const w = art.naturalWidth;
+      const bh = Math.round(body.naturalHeight * (w / body.naturalWidth));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = art.naturalHeight + bh;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+      g.drawImage(art, 0, 0, w, art.naturalHeight);
+      g.drawImage(body, 0, art.naturalHeight, w, bh);
+      cv.toBlob(function(b){ b ? res(b) : rej('blob failed'); }, 'image/png');
+    });
+  }
+
+  // Build the share file ahead of time.
+  // navigator.share must run in the same turn as the user gesture, so building
+  // the image after the click loses the activation and fails.
+  let RS_FILE = null;
+  function whenLoaded(el){
+    return new Promise(function(res){
+      if (el.complete && el.naturalWidth) return res();
+      el.addEventListener('load',  res, { once:true });
+      el.addEventListener('error', res, { once:true });
+    });
+  }
+  function prepFile(){
+    RS_FILE = null;
+    const art  = document.getElementById('rs-art');
+    const body = document.getElementById('rs-body');
+    const tag  = RS_CODE + '_' + RS_KIND;
+    Promise.all([whenLoaded(art), whenLoaded(body)])
+      .then(cardBlob)
+      .then(function(b){
+        if (RS_CODE + '_' + RS_KIND !== tag) return;   // the card changed in the meantime — discard
+        RS_FILE = new File([b], 'movement-navigator-' + RS_CODE + '.png', { type:'image/png' });
+      })
+      .catch(function(){ RS_FILE = null; });
+  }
+
+  function saveImage(){
+    cardBlob().then(function(b){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'movement-navigator-' + RS_CODE + '.png';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      note('Image saved.');
+    }).catch(function(){ note("Couldn't create the image."); });
+  }
+
+  const sh = document.getElementById('sh'), shBack = document.getElementById('sh-back');
+  function openSheet(){ sh.classList.add('on'); shBack.classList.add('on'); note(''); }
+  function closeSheet(){ sh.classList.remove('on'); shBack.classList.remove('on'); }
+  function note(t){ document.getElementById('sh-note').textContent = t; }
+  document.getElementById('sh-close').onclick = closeSheet;
+  shBack.onclick = closeSheet;
+
+  // Use the native share sheet only on touch devices.
+  // Passing files to it on desktop Chrome can kill the renderer, so we never try.
+  const IS_TOUCH = matchMedia('(pointer: coarse)').matches && !!navigator.share;
+
+  document.getElementById('rs-share-btn').onclick = function(){
+    if (!IS_TOUCH) { openSheet(); return; }
+    try {
+      const payload = { title:'The Last Minute', text:shareMsg(), url:shareUrl() };
+      if (RS_FILE && navigator.canShare && navigator.canShare({ files:[RS_FILE] })) {
+        payload.files = [RS_FILE];
+        delete payload.title;                 // some targets reject title alongside files
+      }
+      navigator.share(payload).catch(function(err){
+        if (err && err.name === 'AbortError') return;   // user dismissed the sheet
+        openSheet();
+      });
+    } catch (e) {
+      openSheet();
+    }
+  };
+
+  sh.querySelectorAll('[data-go]').forEach(function(btn){
+    btn.onclick = function(){
+      const u = encodeURIComponent(shareUrl()), t = encodeURIComponent(shareMsg());
+      const go = btn.dataset.go;
+      if (go === 'image')   { saveImage(); return; }
+      if (go === 'copy') {
+        navigator.clipboard.writeText(shareUrl())
+          .then(function(){ note('Link copied.'); })
+          .catch(function(){ note(shareUrl()); });
+        return;
+      }
+      if (go === 'kakao') {
+        // Kakao sharing needs a registered JavaScript key. Fill KAKAO_KEY above.
+        if (window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) {
+          window.Kakao.Share.sendDefault({
+            objectType:'feed',
+            content:{ title:'The Last Minute', description:SHARE_TEXT[RS_CODE],
+                      imageUrl:location.origin + shareUrl().replace(/share\/.*/, '') +
+                               'assets/og/' + RS_CODE + '.jpg',
+                      link:{ mobileWebUrl:shareUrl(), webUrl:shareUrl() } },
+            buttons:[{ title:'Try it yourself',
+                       link:{ mobileWebUrl:shareUrl(), webUrl:shareUrl() } }],
+          });
+        } else {
+          note('KakaoTalk sharing needs a Kakao developer app. See KAKAO_KEY in index.html.');
+        }
+        return;
+      }
+      const urls = {
+        x:'https://twitter.com/intent/tweet?text=' + t + '&url=' + u,
+        fb:'https://www.facebook.com/sharer/sharer.php?u=' + u,
+        threads:'https://www.threads.net/intent/post?text=' + t + '%20' + u,
+      };
+      if (urls[go]) window.open(urls[go], '_blank', 'noopener,width=600,height=640');
+    };
+  });
+
+  // arriving from a shared link jumps straight to the result
+  (function fromShare(){
+    const m = location.search.match(/[?&]type=(RP|RF|EP|EF)/);
+    if (!m) return;
+    ANSWERS.length = 0;
+    const code = m[1];
+    for (let i = 0; i < 3; i++) ANSWERS[i] = code[0] === 'E' ? 0 : 1;
+    for (let i = 3; i < 6; i++) ANSWERS[i] = code[1] === 'P' ? 0 : 1;
+    goToSlide(document.querySelectorAll('.slide').length);
+    pinScroll();
+    renderResult();
+  })();
+
+</script>
+
+</body>
+</html>
