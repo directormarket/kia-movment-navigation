@@ -713,7 +713,10 @@
         <div id="rs-art-wrap"><img id="rs-art" alt=""><div id="rs-hz"></div>
           <p id="rs-missing">The result image could not be loaded.<br>
              Check that the <code>assets/</code> folder was uploaded too.</p></div>
-        <img id="rs-body" alt="">
+        <div id="rs-body-wrap" style="position:relative;width:100%;">
+          <img id="rs-body" alt="">
+          <a id="rs-vehicle-link" target="_blank" rel="noopener" aria-label="Vehicle details" style="position:absolute;bottom:0;left:0;width:100%;top:38%;cursor:pointer;z-index:5;-webkit-tap-highlight-color:transparent;"></a>
+        </div>
       </div>
       <div id="rs-tail">
         <p id="rs-rare"></p>
@@ -1631,6 +1634,10 @@
       sw.style.backgroundImage = 'url(' + src + ')';
       sw.style.backgroundPosition = pos[i] || '40% 40%';
     });
+    const vLink = document.getElementById('rs-vehicle-link');
+    if (vLink) {
+      vLink.href = VEHICLE_URLS[code] || '#';
+    }
     prepFile();
     return src;
   }
@@ -1645,12 +1652,12 @@
 
     line.classList.remove('gone'); line.classList.add('draw');
     art.classList.remove('open');
-    body.classList.remove('up');
+    const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.remove('up');
 
     setTimeout(() => applyCard(RS_CODE, 'col'), 620);
     setTimeout(() => art.classList.add('open'), 700);
     setTimeout(() => line.classList.add('gone'), 1020);
-    setTimeout(() => body.classList.add('up'), 1180);
+    setTimeout(() => { const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.add('up'); }, 1180);
     setTimeout(pinScroll, 1300);
 
     btn.classList.add('done');
@@ -1725,14 +1732,14 @@
 
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
-      art.classList.add('open'); body.classList.add('up');
+      art.classList.add('open'); const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.add('up');
       document.getElementById('rs-tail').classList.add('up');
       return;
     }
     setTimeout(() => line.classList.add('draw'), 260);
     setTimeout(() => art.classList.add('open'), 560);
     setTimeout(() => line.classList.add('gone'), 860);
-    setTimeout(() => body.classList.add('up'), 1060);
+    setTimeout(() => { const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.add('up'); }, 1060);
     setTimeout(() => document.getElementById('rs-tail').classList.add('up'), 1420);
     [0, 300, 900, 1600].forEach(t => setTimeout(pinScroll, t));
   }
@@ -1753,7 +1760,7 @@
     const tail = document.getElementById('rs-tail');
     const saveBtn = document.getElementById('rs-save');
     if (art) art.classList.remove('open');
-    if (body) body.classList.remove('up');
+    if (body) const bw = document.getElementById('rs-body-wrap'); if (bw) bw.classList.remove('up');
     if (line) { line.classList.remove('draw'); line.classList.add('gone'); }
     if (tail) tail.classList.remove('up');
     if (saveBtn) {
