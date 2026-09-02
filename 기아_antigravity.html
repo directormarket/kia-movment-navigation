@@ -359,7 +359,7 @@
       height:100vh;min-height:100vh;max-height:100vh;
       overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       padding:clamp(28px,5vw,64px) clamp(22px,6vw,72px) clamp(56px,8vw,96px);
-      align-items:center;}
+      display:block;}
     #rs-wrap{width:100%;max-width:520px;margin:0 auto}
     #rs-card{background:transparent}
     #rs-art-wrap{position:relative;width:100%;overflow:hidden;background:#0B0E10;
@@ -375,10 +375,11 @@
     #rs-hz.draw{width:100%;opacity:1;
       transition:width .42s cubic-bezier(.3,0,.2,1),opacity .2s}
     #rs-hz.gone{opacity:0;transition:opacity .5s}
-    #rs-body{display:block;width:100%;height:auto;opacity:0;transform:translateY(30px);
+    #rs-body{display:block;width:100%;height:auto;}
+    #rs-body-wrap{position:relative;width:100%;opacity:0;transform:translateY(30px);
       box-shadow:0 22px 60px rgba(0,0,0,.5);
       transition:opacity .5s ease-out,transform .62s cubic-bezier(.16,1,.3,1)}
-    #rs-body.up{opacity:1;transform:none}
+    #rs-body-wrap.up{opacity:1;transform:none}
     #rs-save.done{border-color:#E0662F;color:#E0662F}
     #rs-missing{display:none;position:absolute;inset:0;align-items:center;
       justify-content:center;text-align:center;padding:24px;font-size:13.5px;
@@ -759,6 +760,13 @@
 <script>
   // ── Language State & Translations ──
   let currentLang = 'kr';
+
+  const VEHICLE_URLS = {
+    EP: 'https://worldwide.kia.com/ko/brand/our-brand/heritage/vehicles/ev9',
+    RP: 'https://worldwide.kia.com/ko/brand/our-brand/heritage/vehicles/all-new-sorento',
+    RF: 'https://worldwide.kia.com/ko/brand/our-brand/heritage/vehicles/the-all-new-niro',
+    EF: 'https://worldwide.kia.com/ko/brand/our-brand/heritage/vehicles/ev3'
+  };
 
   const I18N = {
     en: {
@@ -1621,8 +1629,38 @@
 
   let RS_CODE = 'RP', RS_KIND = 'bw';
 
+  const RS_META_EN = {
+    bw: {
+      RP: { hz: 0.5000, art: [760, 798], body: [760, 718] },
+      RF: { hz: 0.5000, art: [760, 740], body: [760, 776] },
+      EP: { hz: 0.5000, art: [760, 676], body: [760, 840] },
+      EF: { hz: 0.4439, art: [760, 696], body: [760, 819] },
+    },
+    col: {
+      RP: { hz: 0.5000, art: [760, 754], body: [760, 762] },
+      RF: { hz: 0.5000, art: [760, 750], body: [760, 765] },
+      EP: { hz: 0.5000, art: [760, 765], body: [760, 750] },
+      EF: { hz: 0.5000, art: [760, 750], body: [760, 765] },
+    }
+  };
+  const RS_META_KR = {
+    bw: {
+      RP: { hz: 0.5, art: [513, 510], body: [513, 514] },
+      RF: { hz: 0.5, art: [513, 508], body: [513, 516] },
+      EP: { hz: 0.5, art: [513, 517], body: [513, 507] },
+      EF: { hz: 0.5, art: [513, 451], body: [513, 573] }
+    },
+    col: {
+      RP: { hz: 0.5, art: [513, 510], body: [513, 514] },
+      RF: { hz: 0.5, art: [513, 508], body: [513, 516] },
+      EP: { hz: 0.5, art: [513, 517], body: [513, 507] },
+      EF: { hz: 0.5, art: [513, 508], body: [513, 516] }
+    }
+  };
+
   function applyCard(code, kind){
-    const m    = RS_META[kind][code];
+    const metaSource = (currentLang === 'kr') ? RS_META_KR : RS_META_EN;
+    const m = (metaSource[kind] && metaSource[kind][code]) || metaSource['bw'][code] || { hz: 0.5, art: [513, 513], body: [513, 513] };
     const art  = document.getElementById('rs-art');
     const body = document.getElementById('rs-body');
     const line = document.getElementById('rs-hz');
@@ -1708,9 +1746,15 @@
     const body = document.getElementById('rs-body');
     const line = document.getElementById('rs-hz');
 
-    document.getElementById('rs-rare').innerHTML =
-      '<b>' + t.share + '%</b> of participants got &ldquo;' + t.kr + '&rdquo;. ' +
-      'All six choices have to match for the image to match too, so only <b>1.6%</b> received exactly this one.';
+    if (currentLang === 'kr') {
+      document.getElementById('rs-rare').innerHTML =
+        '참가자의 <b>' + t.share + '%</b>가 &ldquo;' + (t.kr || '') + '&rdquo; 결과를 받았습니다. ' +
+        '여섯 개의 선택지가 모두 일치해야 같은 이미지가 완성되므로, 정확히 이 만다라를 받은 사람은 <b>1.6%</b>에 불과합니다.';
+    } else {
+      document.getElementById('rs-rare').innerHTML =
+        '<b>' + t.share + '%</b> of participants got &ldquo;' + (t.en || t.kr || '') + '&rdquo;. ' +
+        'All six choices have to match for the image to match too, so only <b>1.6%</b> received exactly this one.';
+    }
 
     const nextTitle = document.getElementById('rs-next-title');
     const nextHint = document.getElementById('rs-next-hint');
@@ -1719,7 +1763,7 @@
 
     const box = document.getElementById('rs-links');
     box.innerHTML = '';
-    const links = (currentLang === 'kr') ? (t.links_kr || t.links_en) : (t.links_en || t.links_kr);
+    const links = (currentLang === 'kr' && t.links_kr) ? t.links_kr : (t.links_en || t.links || []);
     links.forEach(function(L){
       const a = document.createElement('a');
       a.className = 'rs-link'; a.href = L[3];
