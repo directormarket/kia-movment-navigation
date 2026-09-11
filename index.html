@@ -1131,24 +1131,32 @@
       const cx = targetX || (W / 2);
       const cy = targetY || (H * 0.38);
 
-      // 1. Every particle bursts from center and forms the even number!
+      // 1. Every particle bursts from detonation center, forms the digit, then disperses outward!
       const count = digitPoints.length;
       for (let i = 0; i < count; i++) {
         const p = digitPoints[i];
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
         
-        const angle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.5;
+        const burstAngle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.4;
         const dist = Math.hypot(p.x - cx, p.y - cy);
-        const midX = cx + Math.cos(angle) * dist * (1.15 + Math.random() * 0.35);
-        const midY = cy + Math.sin(angle) * dist * (1.15 + Math.random() * 0.35) - Math.random() * 15;
+        const midX = cx + Math.cos(burstAngle) * dist * (1.12 + Math.random() * 0.30);
+        const midY = cy + Math.sin(burstAngle) * dist * (1.12 + Math.random() * 0.30) - Math.random() * 12;
+
+        // Outward scatter angle & speed when dispersing from the digit shape
+        const scatterAngle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.7;
+        const scatterSpeed = Math.random() * 85 + 35;
+        const scatterGravity = Math.random() * 38 + 20;
 
         digitParticles.push({
-          startX: cx + (Math.random() - 0.5) * 12,
-          startY: cy + (Math.random() - 0.5) * 12,
+          startX: cx + (Math.random() - 0.5) * 10,
+          startY: cy + (Math.random() - 0.5) * 10,
           midX: midX,
           midY: midY,
           targetX: p.x,
           targetY: p.y,
+          scatterAngle: scatterAngle,
+          scatterSpeed: scatterSpeed,
+          scatterGravity: scatterGravity,
           x: cx,
           y: cy,
           px: cx,
@@ -1156,17 +1164,17 @@
           color: col,
           size: Math.random() * 2.8 + 1.8,
           flicker: Math.random() * 6.28,
-          flickerSpeed: Math.random() * 0.30 + 0.20,
+          flickerSpeed: Math.random() * 0.32 + 0.22,
           alpha: p.alpha
         });
       }
 
-      // 2. Extra radial tracer sparks
+      // 2. Extra radial tracer sparks for explosive pop
       const curW = W || window.innerWidth || 360;
-      const extraCount = Math.min(100, Math.max(50, Math.floor(curW * 0.10)));
+      const extraCount = Math.min(90, Math.max(45, Math.floor(curW * 0.09)));
       for (let i = 0; i < extraCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 18 + 6;
+        const speed = Math.random() * 16 + 6;
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
 
         radialSparks.push({
@@ -1175,13 +1183,13 @@
           px: cx,
           py: cy,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - (Math.random() * 3.5 + 1.0),
+          vy: Math.sin(angle) * speed - (Math.random() * 3.0 + 1.0),
           color: col,
-          size: Math.random() * 3.6 + 1.6,
-          decay: Math.random() * 0.022 + 0.014,
+          size: Math.random() * 3.4 + 1.6,
+          decay: Math.random() * 0.024 + 0.016,
           life: 1.0,
-          drag: 0.94,
-          gravity: 0.18,
+          drag: 0.93,
+          gravity: 0.20,
           flicker: Math.random() * 6.28
         });
       }
@@ -1191,9 +1199,9 @@
       shockwaves.push({
         x: cx,
         y: cy,
-        r: 12,
-        maxR: Math.min(curW, curH) * 0.52,
-        alpha: 0.9,
+        r: 10,
+        maxR: Math.min(curW, curH) * 0.48,
+        alpha: 0.85,
         color: currentTheme[1] || currentTheme[0]
       });
     }
@@ -1223,7 +1231,7 @@
       const isEven = (countdown % 2 === 0);
 
       try {
-        // ── EVEN NUMBER: Exploding particles FLY OUT and FORM the even number! ──
+        // ── EVEN NUMBER: Firework explodes -> particles form number -> particles DISPERSE outward! ──
         if (isEven) {
           const cx = targetX || (W / 2);
           const cy = targetY || (H * 0.38);
@@ -1231,22 +1239,28 @@
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
 
-          const assembleP = Math.min(1, progress / 0.30);
+          // Phase 1: Rapid assembly into number (0.0s ~ 0.22s)
+          const assembleP = Math.min(1, progress / 0.22);
           const easeAssemble = 1 - Math.pow(1 - assembleP, 3);
 
+          // Phase 2 & 3: Hold briefly (0.22s ~ 0.36s), then burst/disperse outward (0.36s ~ 0.95s)
+          const scatterP = Math.max(0, (progress - 0.36) / 0.58);
+          const easeScatter = 1 - Math.pow(1 - Math.min(1, scatterP), 2.2);
+
           let fadeAlpha = 1.0;
-          if (progress > 0.55) {
-            const fadeP = (progress - 0.55) / 0.37;
-            fadeAlpha = Math.max(0, 1.0 - Math.pow(fadeP, 1.3));
+          if (progress > 0.50) {
+            const fadeP = (progress - 0.50) / 0.44;
+            fadeAlpha = Math.max(0, 1.0 - Math.pow(fadeP, 1.4));
           }
 
-          // 1. Soft atmospheric bloom around the forming firework number
-          if (fadeAlpha > 0.01 && assembleP > 0.4) {
+          // 1. Soft atmospheric bloom around the formed firework number
+          if (fadeAlpha > 0.01 && assembleP > 0.5) {
             const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-            const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * easeAssemble);
+            const glowSpread = 1 + easeScatter * 0.45;
+            const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * easeAssemble) * glowSpread;
             const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.24 * fadeAlpha) + ')');
-            radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.06 * fadeAlpha) + ')');
+            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.22 * fadeAlpha) + ')');
+            radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.05 * fadeAlpha) + ')');
             radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
             ctx.fillStyle = radGlow;
             ctx.beginPath();
@@ -1254,22 +1268,28 @@
             ctx.fill();
           }
 
-          // 2. Render all particles morphing into and forming the number shape
+          // 2. Render all particles: morphing into number -> glowing -> dispersing outwards like fireworks!
           for (let i = 0; i < digitParticles.length; i++) {
             const p = digitParticles[i];
             p.px = p.x;
             p.py = p.y;
 
             if (assembleP < 1.0) {
+              // Assembling into digit
               const t = easeAssemble;
               const invT = 1 - t;
               p.x = invT * invT * p.startX + 2 * invT * t * p.midX + t * t * p.targetX;
               p.y = invT * invT * p.startY + 2 * invT * t * p.midY + t * t * p.targetY;
+            } else if (scatterP > 0) {
+              // Dispersing outwards from the formed number
+              const sDist = easeScatter * p.scatterSpeed;
+              const grav = Math.pow(scatterP, 1.7) * p.scatterGravity;
+              p.x = p.targetX + Math.cos(p.scatterAngle) * sDist;
+              p.y = p.targetY + Math.sin(p.scatterAngle) * sDist + grav;
             } else {
-              const driftY = Math.pow(progress - 0.30, 1.6) * 22;
-              const driftX = Math.sin(progress * 5 + i) * 2.5;
-              p.x = p.targetX + driftX;
-              p.y = p.targetY + driftY;
+              // Peak moment: clearly formed digit shape
+              p.x = p.targetX;
+              p.y = p.targetY;
             }
 
             p.flicker += p.flickerSpeed;
@@ -1278,16 +1298,18 @@
 
             if (currentAlpha <= 0.01) continue;
 
-            if (assembleP < 1.0) {
+            // Sparkling streak trajectory during assemble and dispersal
+            if (assembleP < 1.0 || scatterP > 0.05) {
               ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.75) + ')';
-              ctx.lineWidth = Math.max(0.6, p.size * 0.8);
+              ctx.lineWidth = Math.max(0.6, p.size * (scatterP > 0 ? (1 - scatterP * 0.4) : 0.8));
               ctx.beginPath();
               ctx.moveTo(p.px, p.py);
               ctx.lineTo(p.x, p.y);
               ctx.stroke();
             }
 
-            ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
+            // Firework spark core & halo
+            ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.88) + ')';
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size * 1.3, 0, Math.PI * 2);
             ctx.fill();
