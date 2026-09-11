@@ -952,7 +952,7 @@
     if (n === 7) setTimeout(startPlan, 400);
   }
 
-  // ── Q1 Ethereal Firework Reveal Countdown Canvas ──
+  // ── Q1 True Particle-Morphing Shape Firework Countdown Canvas ──
   let q1AnimId = null;
   let startQ1 = null;
   let resetQ1 = null;
@@ -971,6 +971,7 @@
     const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
 
     let digitPoints = [];
+    let digitParticles = [];
     let radialSparks = [];
     let shockwaves = [];
     let rockets = [];
@@ -1068,7 +1069,7 @@
       const imgData = sampleCtx.getImageData(0, 0, sW, sH);
       const data = imgData.data;
 
-      const step = Math.max(3, Math.floor(fs / 38));
+      const step = Math.max(3, Math.floor(fs / 40));
       const offsetX = posX - sW / 2;
       const offsetY = posY - sH / 2;
 
@@ -1076,7 +1077,7 @@
         for (let x = 0; x < sW; x += step) {
           const idx = (y * sW + x) * 4;
           const alpha = data[idx + 3];
-          if (alpha > 110) {
+          if (alpha > 100) {
             digitPoints.push({
               x: x + offsetX,
               y: y + offsetY,
@@ -1111,8 +1112,10 @@
       }];
     }
 
-    function triggerFireworkExplosion() {
+    // Explosion: Particles fly out from blast point and form the even number shape!
+    function triggerParticleShapeExplosion() {
       exploded = true;
+      digitParticles = [];
       radialSparks = [];
       shockwaves = [];
       rockets = [];
@@ -1120,32 +1123,62 @@
       const cx = targetX;
       const cy = targetY;
 
-      // Radiant firework explosion sparks blooming outward (180+ sparks)
-      const sparkCount = Math.min(220, Math.max(120, Math.floor(W * 0.16)));
-      for (let i = 0; i < sparkCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 16 + 4.5;
+      // 1. Digit Shape Particles: Every particle explodes outward and settles onto the number shape!
+      const count = digitPoints.length;
+      for (let i = 0; i < count; i++) {
+        const p = digitPoints[i];
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
+        
+        // Initial blast overshoot trajectory
+        const angle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.5;
+        const dist = Math.hypot(p.x - cx, p.y - cy);
+        const midX = cx + Math.cos(angle) * dist * (1.15 + Math.random() * 0.35);
+        const midY = cy + Math.sin(angle) * dist * (1.15 + Math.random() * 0.35) - Math.random() * 15;
 
-        radialSparks.push({
-          x: cx + (Math.random() - 0.5) * 10,
-          y: cy + (Math.random() - 0.5) * 10,
+        digitParticles.push({
+          startX: cx + (Math.random() - 0.5) * 12,
+          startY: cy + (Math.random() - 0.5) * 12,
+          midX: midX,
+          midY: midY,
+          targetX: p.x,
+          targetY: p.y,
+          x: cx,
+          y: cy,
           px: cx,
           py: cy,
-          vx: Math.cos(angle) * speed * (0.8 + Math.random() * 0.5),
-          vy: Math.sin(angle) * speed * (0.8 + Math.random() * 0.5) - (Math.random() * 2.8 + 0.5),
           color: col,
-          size: Math.random() * 3.6 + 1.6,
-          decay: Math.random() * 0.018 + 0.011,
-          life: 1.0,
-          drag: 0.95,
-          gravity: 0.14,
+          size: Math.random() * 2.8 + 1.8,
           flicker: Math.random() * 6.28,
-          isCrackle: Math.random() < 0.3
+          flickerSpeed: Math.random() * 0.30 + 0.20,
+          alpha: p.alpha
         });
       }
 
-      // Expanding shockwave ring from the explosion
+      // 2. Extra radial firework sparks shooting past the number
+      const extraCount = Math.min(100, Math.max(50, Math.floor(W * 0.10)));
+      for (let i = 0; i < extraCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 18 + 6;
+        const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
+
+        radialSparks.push({
+          x: cx,
+          y: cy,
+          px: cx,
+          py: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - (Math.random() * 3.5 + 1.0),
+          color: col,
+          size: Math.random() * 3.6 + 1.6,
+          decay: Math.random() * 0.022 + 0.014,
+          life: 1.0,
+          drag: 0.94,
+          gravity: 0.18,
+          flicker: Math.random() * 6.28
+        });
+      }
+
+      // 3. Expanding shockwave ring
       shockwaves.push({
         x: cx,
         y: cy,
@@ -1166,7 +1199,7 @@
         sampleDigitPoints(countdown, targetX || W / 2, targetY || H * 0.38);
         exploded = false;
         if (countdown % 2 === 0) {
-          triggerFireworkExplosion();
+          triggerParticleShapeExplosion();
         } else {
           launchRocket();
         }
@@ -1179,7 +1212,7 @@
 
       const isEven = (countdown % 2 === 0);
 
-      // ── EVEN NUMBER: Firework explodes & scatters, subtly revealing the even number, then fading out ──
+      // ── EVEN NUMBER: Exploding particles FLY OUT and FORM the even number! ──
       if (isEven) {
         const cx = targetX;
         const cy = targetY;
@@ -1187,86 +1220,113 @@
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
 
-        // Opacity curve for the 은은한 Even Number:
-        // 0ms ~ 200ms: Firework explodes, number softly emerges (0 -> 0.70)
-        // 200ms ~ 400ms: Number is gently illuminated in the glowing firework light
-        // 400ms ~ 880ms: Number and sparks smoothly fade out into the dark (0.70 -> 0.0)
-        let subtleAlpha = 0;
-        if (progress < 0.20) {
-          subtleAlpha = (progress / 0.20) * 0.70;
-        } else if (progress < 0.40) {
-          subtleAlpha = 0.70;
-        } else if (progress < 0.88) {
-          const pOut = (progress - 0.40) / 0.48;
-          subtleAlpha = Math.max(0, 0.70 * (1.0 - Math.pow(pOut, 1.2)));
-        } else {
-          subtleAlpha = 0;
+        // Timing curve:
+        // 0.00s ~ 0.30s: Particles burst from center, arc outwards, and lock into the number glyph shape!
+        // 0.30s ~ 0.55s: The assembled firework number glitters and shines brightly in the sky
+        // 0.55s ~ 0.92s: Particles gently drift with gravity and smoothly fade out into the dark
+        const assembleP = Math.min(1, progress / 0.30);
+        const easeAssemble = 1 - Math.pow(1 - assembleP, 3);
+
+        let fadeAlpha = 1.0;
+        if (progress > 0.55) {
+          const fadeP = (progress - 0.55) / 0.37;
+          fadeAlpha = Math.max(0, 1.0 - Math.pow(fadeP, 1.3));
         }
 
-        // 1. Draw soft ambient glow aura around the exploding even number
-        if (subtleAlpha > 0.01) {
+        // 1. Soft atmospheric bloom around the forming firework number
+        if (fadeAlpha > 0.01 && assembleP > 0.4) {
           const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-          const glowRad = Math.min(W * 0.32, 240);
+          const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * easeAssemble);
           const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.28 * subtleAlpha) + ')');
-          radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.08 * subtleAlpha) + ')');
+          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.24 * fadeAlpha) + ')');
+          radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.06 * fadeAlpha) + ')');
           radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
           ctx.fillStyle = radGlow;
           ctx.beginPath();
           ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
           ctx.fill();
-
-          // 2. Draw the subtle, soft-lit even number points (은은하게)
-          for (let i = 0; i < digitPoints.length; i++) {
-            const p = digitPoints[i];
-            ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * subtleAlpha * 0.95) + ')';
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 2.3, 0, Math.PI * 2);
-            ctx.fill();
-          }
         }
 
-        // 3. Render expanding & scattering firework sparks
-        for (let i = radialSparks.length - 1; i >= 0; i--) {
-          const p = radialSparks[i];
+        // 2. Render all particles morphing into and forming the number shape
+        for (let i = 0; i < digitParticles.length; i++) {
+          const p = digitParticles[i];
           p.px = p.x;
           p.py = p.y;
-          p.vx *= p.drag;
-          p.vy = p.vy * p.drag + p.gravity;
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= p.decay;
-          p.flicker += 0.30;
 
-          if (p.life <= 0) {
+          // Quadratic Bezier arc: startX -> midX (burst apex) -> targetX (number position)
+          if (assembleP < 1.0) {
+            const t = easeAssemble;
+            const invT = 1 - t;
+            p.x = invT * invT * p.startX + 2 * invT * t * p.midX + t * t * p.targetX;
+            p.y = invT * invT * p.startY + 2 * invT * t * p.midY + t * t * p.targetY;
+          } else {
+            // Assembled! Settle on the number shape + slight gravitational drift
+            const driftY = Math.pow(progress - 0.30, 1.6) * 22;
+            const driftX = Math.sin(progress * 5 + i) * 2.5;
+            p.x = p.targetX + driftX;
+            p.y = p.targetY + driftY;
+          }
+
+          p.flicker += p.flickerSpeed;
+          const flk = 0.70 + 0.30 * Math.sin(p.flicker);
+          const currentAlpha = Math.max(0, fadeAlpha * flk * p.alpha);
+
+          if (currentAlpha <= 0.01) continue;
+
+          // Draw spark streak line during flight
+          if (assembleP < 1.0) {
+            ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.75) + ')';
+            ctx.lineWidth = Math.max(0.6, p.size * 0.8);
+            ctx.beginPath();
+            ctx.moveTo(p.px, p.py);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+          }
+
+          // Glowing outer particle corona
+          ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 1.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Brilliant white-hot star center
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + currentAlpha + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 3. Render extra radial tracer sparks
+        for (let i = radialSparks.length - 1; i >= 0; i--) {
+          const sp = radialSparks[i];
+          sp.px = sp.x;
+          sp.py = sp.y;
+          sp.vx *= sp.drag;
+          sp.vy = sp.vy * sp.drag + sp.gravity;
+          sp.x += sp.vx;
+          sp.y += sp.vy;
+          sp.life -= sp.decay;
+          sp.flicker += 0.30;
+
+          if (sp.life <= 0) {
             radialSparks.splice(i, 1);
             continue;
           }
 
-          const flk = 0.70 + 0.30 * Math.sin(p.flicker);
-          const currentAlpha = Math.max(0, p.life * flk);
+          const flk = 0.70 + 0.30 * Math.sin(sp.flicker);
+          const currentAlpha = Math.max(0, sp.life * flk);
 
-          // Draw trailing spark line
-          ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
-          ctx.lineWidth = Math.max(0.6, p.size * p.life);
+          ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.85) + ')';
+          ctx.lineWidth = Math.max(0.6, sp.size * sp.life);
           ctx.beginPath();
-          ctx.moveTo(p.px, p.py);
-          ctx.lineTo(p.x, p.y);
+          ctx.moveTo(sp.px, p.py);
+          ctx.lineTo(sp.x, sp.y);
           ctx.stroke();
 
-          // Draw spark star head
-          ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + currentAlpha + ')';
+          ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + currentAlpha + ')';
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 0.75 * p.life, 0, Math.PI * 2);
+          ctx.arc(sp.x, sp.y, sp.size * 0.75 * sp.life, 0, Math.PI * 2);
           ctx.fill();
-
-          // Diamond glint on crackling sparks
-          if (p.isCrackle && p.life > 0.35 && Math.random() < 0.2) {
-            ctx.fillStyle = 'rgba(255, 255, 255, ' + currentAlpha + ')';
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 1.4 * p.life, 0, Math.PI * 2);
-            ctx.fill();
-          }
         }
 
         // 4. Render shockwaves
@@ -1366,7 +1426,7 @@
 
         if (countdown % 2 === 0) {
           sampleDigitPoints(countdown, targetX, targetY);
-          triggerFireworkExplosion();
+          triggerParticleShapeExplosion();
         } else {
           sampleDigitPoints(countdown, W / 2, H * 0.38);
           launchRocket();
@@ -1381,12 +1441,13 @@
       q1Selected = false;
       secondStart = null;
       exploded = false;
+      digitParticles = [];
       radialSparks = [];
       shockwaves = [];
       rockets = [];
       resize();
       if (countdown % 2 === 0) {
-        triggerFireworkExplosion();
+        triggerParticleShapeExplosion();
       } else {
         launchRocket();
       }
