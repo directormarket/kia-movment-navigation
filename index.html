@@ -1140,74 +1140,56 @@
       const curW = W || window.innerWidth || 360;
       const curH = H || window.innerHeight || 600;
 
-      // 1. Shockwave ring from detonation point
+      // 1. Soft shockwave ring
       microBursts.push({
-        x: cx, y: cy, r: 8,
-        maxR: Math.min(curW, curH) * 0.50,
-        alpha: 0.85,
+        x: cx, y: cy, r: 6,
+        maxR: Math.min(curW, curH) * 0.45,
+        alpha: 0.7,
         color: currentTheme[1] || currentTheme[0]
       });
 
-      // 2. Create one firework spark per digit-point
-      //    Each spark explodes FROM the center, flies OUT to its digit position,
-      //    then continues outward with gravity — like a real firework burst
+      // 2. One spark per digit-point: softly blooms outward from center
       for (let i = 0; i < digitPoints.length; i++) {
         const pt = digitPoints[i];
         const col = pt.color || currentTheme[Math.floor(Math.random() * currentTheme.length)];
-
-        // Direction from center to this digit point
         const dx = pt.x - cx;
         const dy = pt.y - cy;
-        const dist = Math.hypot(dx, dy) || 1;
         const angle = Math.atan2(dy, dx);
 
-        // Velocity: spark flies outward from center toward its position on the digit
-        // Speed proportional to distance so all sparks arrive ~simultaneously
-        const flightTime = 0.18; // seconds to reach digit position
-        const vx = dx / (flightTime * 60); // ~60fps
-        const vy = dy / (flightTime * 60);
-
         fireworkSparks.push({
-          // Current position (starts at explosion center)
-          x: cx + (Math.random() - 0.5) * 6,
-          y: cy + (Math.random() - 0.5) * 6,
+          x: cx + (Math.random() - 0.5) * 5,
+          y: cy + (Math.random() - 0.5) * 5,
           px: cx, py: cy,
-          // Target position on digit shape
           targetX: pt.x,
           targetY: pt.y,
-          // Outward velocity (for post-arrival drift)
-          outAngle: angle + (Math.random() - 0.5) * 0.3,
-          outSpeed: 0.6 + Math.random() * 1.2,
-          // Physics
-          vx: vx + (Math.random() - 0.5) * 0.8,
-          vy: vy + (Math.random() - 0.5) * 0.8,
-          gravity: 0.04 + Math.random() * 0.06,
-          // Visual
+          outAngle: angle + (Math.random() - 0.5) * 0.25,
+          outSpeed: 0.3 + Math.random() * 0.6,
+          gravity: 0.02 + Math.random() * 0.03,
           color: col,
-          size: Math.random() * 2.6 + 1.8,
+          size: Math.random() * 2.4 + 1.8,
           alpha: pt.alpha,
           flicker: Math.random() * 6.28,
-          flickerSpeed: Math.random() * 0.30 + 0.20,
+          flickerSpeed: Math.random() * 0.18 + 0.10,
           life: 1.0
         });
       }
 
-      // 3. Extra burst sparks that fly past the digit (background sparkle)
-      const extraCount = Math.min(60, Math.max(30, Math.floor(curW * 0.06)));
+      // 3. Gentle background sparkles
+      const extraCount = Math.min(45, Math.max(20, Math.floor(curW * 0.05)));
       for (let i = 0; i < extraCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 14 + 5;
+        const speed = Math.random() * 10 + 3;
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
         activeSparks.push({
           x: cx, y: cy, px: cx, py: cy,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - (Math.random() * 2.5 + 0.5),
+          vy: Math.sin(angle) * speed - (Math.random() * 1.5),
           color: col,
-          size: Math.random() * 3.0 + 1.4,
-          decay: Math.random() * 0.022 + 0.014,
+          size: Math.random() * 2.6 + 1.2,
+          decay: Math.random() * 0.018 + 0.010,
           life: 1.0,
-          drag: 0.94,
-          gravity: 0.15,
+          drag: 0.95,
+          gravity: 0.10,
           flicker: Math.random() * 6.28
         });
       }
@@ -1238,7 +1220,7 @@
       const isEven = (countdown % 2 === 0);
 
       try {
-        // ── EVEN NUMBER: Firework BURST → sparks form number → gravity fall + fade out like real fireworks ──
+        // ── EVEN NUMBER: Soft firework bloom → number shape → gentle fade out ──
         if (isEven) {
           const cx = targetX || (W / 2);
           const cy = targetY || (H * 0.38);
@@ -1246,25 +1228,25 @@
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
 
-          // Phase timing:
-          // 0.00s ~ 0.18s : Sparks fly outward from center to digit positions (BURST)
-          // 0.18s ~ 0.45s : Sparks settled on digit, glowing bright, number clearly visible (PEAK)
-          // 0.45s ~ 0.95s : Sparks drift down with gravity, dim & fade out like dying firework embers (FADE)
+          // Smooth phase timing:
+          // 0.00s ~ 0.30s : Sparks bloom softly outward from center to digit positions
+          // 0.30s ~ 0.55s : Number fully formed, glowing warmly
+          // 0.55s ~ 0.98s : Gentle fade out — sparks dim smoothly, slight downward drift
 
-          const burstPhase = Math.min(1, progress / 0.18);
-          const easeBurst = 1 - Math.pow(1 - burstPhase, 2.5);
+          const burstPhase = Math.min(1, progress / 0.30);
+          const easeBurst = 1 - Math.pow(1 - burstPhase, 2.8); // smooth ease-out
 
-          // After peak, sparks start falling & fading
-          const fadePhase = Math.max(0, (progress - 0.40) / 0.55);
-          const easeFade = Math.pow(Math.min(1, fadePhase), 1.2);
+          // Gentle fade begins
+          const fadePhase = Math.max(0, (progress - 0.50) / 0.48);
+          const easeFade = fadePhase * fadePhase; // quadratic = very smooth
 
-          // 1. Ambient glow around the firework number
-          const glowAlpha = (1 - easeFade) * Math.min(1, burstPhase * 2);
+          // 1. Warm ambient glow
+          const glowAlpha = Math.max(0, (1 - easeFade) * Math.min(1, easeBurst * 1.5));
           if (glowAlpha > 0.01) {
             const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-            const glowRad = Math.min(W * 0.34, 250);
+            const glowRad = Math.min(W * 0.32, 240);
             const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.20 * glowAlpha) + ')');
+            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.18 * glowAlpha) + ')');
             radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.04 * glowAlpha) + ')');
             radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
             ctx.fillStyle = radGlow;
@@ -1273,78 +1255,69 @@
             ctx.fill();
           }
 
-          // 2. Render all firework sparks that form the number shape
+          // 2. Render firework sparks forming & fading the number
           for (let i = 0; i < fireworkSparks.length; i++) {
             const sp = fireworkSparks[i];
             sp.px = sp.x;
             sp.py = sp.y;
 
             if (burstPhase < 1.0) {
-              // Phase 1: Flying outward from center to digit position
-              sp.x = cx + (sp.targetX - cx) * easeBurst + (Math.random() - 0.5) * (1 - easeBurst) * 4;
-              sp.y = cy + (sp.targetY - cy) * easeBurst + (Math.random() - 0.5) * (1 - easeBurst) * 4;
+              // Blooming outward from center — smooth interpolation
+              const t = easeBurst;
+              sp.x = cx + (sp.targetX - cx) * t + (Math.random() - 0.5) * (1 - t) * 3;
+              sp.y = cy + (sp.targetY - cy) * t + (Math.random() - 0.5) * (1 - t) * 3;
             } else if (fadePhase > 0) {
-              // Phase 3: Gravity fall + outward drift (like real firework embers dying)
-              const driftTime = fadePhase;
-              const outDrift = driftTime * sp.outSpeed * 28;
-              const gravityFall = Math.pow(driftTime, 1.6) * 55 * sp.gravity / 0.05;
-              sp.x = sp.targetX + Math.cos(sp.outAngle) * outDrift + (Math.random() - 0.5) * driftTime * 2;
-              sp.y = sp.targetY + Math.sin(sp.outAngle) * outDrift * 0.3 + gravityFall;
+              // Gentle downward drift + very slight outward spread
+              const drift = easeFade;
+              const gentleFall = drift * drift * 18;
+              const softSpread = drift * sp.outSpeed * 8;
+              sp.x = sp.targetX + Math.cos(sp.outAngle) * softSpread + (Math.random() - 0.5) * drift;
+              sp.y = sp.targetY + gentleFall + (Math.random() - 0.5) * drift;
             } else {
-              // Phase 2: Holding at digit position (peak brightness)
-              sp.x = sp.targetX + (Math.random() - 0.5) * 0.8;
-              sp.y = sp.targetY + (Math.random() - 0.5) * 0.8;
+              // Holding at digit position — tiny shimmer
+              sp.x = sp.targetX + (Math.random() - 0.5) * 0.6;
+              sp.y = sp.targetY + (Math.random() - 0.5) * 0.6;
             }
 
-            // Flicker & alpha
+            // Soft flicker
             sp.flicker += sp.flickerSpeed;
-            const flk = 0.75 + 0.25 * Math.sin(sp.flicker);
+            const flk = 0.82 + 0.18 * Math.sin(sp.flicker);
 
-            // Fade: bright during peak, then smoothly die out
+            // Alpha: smooth rise during burst, smooth fall during fade
             let sparkAlpha;
             if (burstPhase < 1.0) {
               sparkAlpha = easeBurst * flk * sp.alpha;
             } else {
-              sparkAlpha = Math.max(0, (1.0 - Math.pow(easeFade, 1.1))) * flk * sp.alpha;
+              sparkAlpha = Math.max(0, (1.0 - easeFade)) * flk * sp.alpha;
             }
 
-            if (sparkAlpha <= 0.01) continue;
+            if (sparkAlpha <= 0.008) continue;
 
-            // Streak trail during burst phase
-            if (burstPhase < 1.0 && burstPhase > 0.05) {
-              ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.7) + ')';
-              ctx.lineWidth = Math.max(0.5, sp.size * 0.7);
+            // Soft streak trail during bloom
+            if (burstPhase < 1.0 && burstPhase > 0.08) {
+              ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.55) + ')';
+              ctx.lineWidth = Math.max(0.4, sp.size * 0.6);
               ctx.beginPath();
               ctx.moveTo(sp.px, sp.py);
               ctx.lineTo(sp.x, sp.y);
               ctx.stroke();
             }
 
-            // Falling ember trail during fade phase
-            if (fadePhase > 0.05) {
-              ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.4) + ')';
-              ctx.lineWidth = Math.max(0.4, sp.size * 0.5 * (1 - easeFade));
-              ctx.beginPath();
-              ctx.moveTo(sp.px, sp.py);
-              ctx.lineTo(sp.x, sp.y);
-              ctx.stroke();
-            }
-
-            // Glowing spark body (colored)
-            const bodySize = sp.size * (fadePhase > 0 ? Math.max(0.3, 1 - easeFade * 0.7) : 1.0);
-            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.9) + ')';
+            // Colored glow body — shrinks gently during fade
+            const bodySize = sp.size * (fadePhase > 0 ? Math.max(0.4, 1 - easeFade * 0.5) : 1.0);
+            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.88) + ')';
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, bodySize * 1.2, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, bodySize * 1.15, 0, Math.PI * 2);
             ctx.fill();
 
-            // Hot white core
-            ctx.fillStyle = 'rgba(255, 255, 255, ' + sparkAlpha + ')';
+            // White-hot core
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + (sparkAlpha * 0.9) + ')';
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, bodySize * 0.55, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, bodySize * 0.5, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // 3. Render extra burst sparks (background sparkle that flies past)
+          // 3. Background sparkles (gentle physics)
           for (let i = activeSparks.length - 1; i >= 0; i--) {
             const sp = activeSparks[i];
             sp.px = sp.x;
@@ -1354,41 +1327,41 @@
             sp.x += sp.vx;
             sp.y += sp.vy;
             sp.life -= sp.decay;
-            sp.flicker += 0.32;
+            sp.flicker += 0.25;
 
             if (sp.life <= 0 || sp.x < -20 || sp.x > W + 20 || sp.y > H + 20) {
               activeSparks.splice(i, 1);
               continue;
             }
 
-            const flk = 0.70 + 0.30 * Math.sin(sp.flicker);
-            const currentAlpha = Math.max(0, sp.life * flk);
+            const flk = 0.75 + 0.25 * Math.sin(sp.flicker);
+            const currentAlpha = Math.max(0, sp.life * sp.life * flk);
             if (currentAlpha <= 0.01) continue;
 
-            ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.8) + ')';
-            ctx.lineWidth = Math.max(0.5, sp.size * sp.life * 0.7);
+            ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.65) + ')';
+            ctx.lineWidth = Math.max(0.4, sp.size * sp.life * 0.6);
             ctx.beginPath();
             ctx.moveTo(sp.px, sp.py);
             ctx.lineTo(sp.x, sp.y);
             ctx.stroke();
 
-            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.85) + ')';
+            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.8) + ')';
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, sp.size * sp.life, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, sp.size * sp.life * 0.9, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // 4. Render shockwave rings
+          // 4. Soft shockwave ring
           for (let i = microBursts.length - 1; i >= 0; i--) {
             const sw = microBursts[i];
-            sw.r += (sw.maxR - sw.r) * 0.16;
-            sw.alpha *= 0.84;
+            sw.r += (sw.maxR - sw.r) * 0.12;
+            sw.alpha *= 0.88;
             if (sw.alpha < 0.01) {
               microBursts.splice(i, 1);
               continue;
             }
             ctx.strokeStyle = 'rgba(' + sw.color.r + ',' + sw.color.g + ',' + sw.color.b + ',' + sw.alpha + ')';
-            ctx.lineWidth = Math.max(0.6, 3.0 * sw.alpha);
+            ctx.lineWidth = Math.max(0.5, 2.0 * sw.alpha);
             ctx.beginPath();
             ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
             ctx.stroke();
