@@ -965,69 +965,50 @@
     let W = 0, H = 0, dpr = 1;
     let countdown = 60;
     let secondStart = null;
-    let q1AnimId = null;
 
     const sampleCv = document.createElement('canvas');
     const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
 
     let digitPoints = [];
-    let activeSparks = [];
-    let microBursts = [];
+    let aerialRays = [];
+    let sizzleSparks = [];
+    let fallingEmbers = [];
+    let shockwaves = [];
     let rockets = [];
 
     let targetX = 0, targetY = 0;
+    let currentFontSize = 60;
 
-    // Vibrant Random Color Themes for Fireworks
+    // Golden / Champagne / Amber Sparkler Themes matching the reference firework photo
     const COLOR_THEMES = [
-      // 1. Electric Cyan & Ice Blue (Kia Signature)
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 159, g: 231, b: 255 },
-        { r: 56,  g: 189, b: 248 },
-        { r: 14,  g: 165, b: 233 },
-        { r: 224, g: 242, b: 254 }
-      ],
-      // 2. Cosmic Magenta & Neon Pink
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 244, g: 63,  b: 94  },
-        { r: 236, g: 72,  b: 153 },
-        { r: 251, g: 113, b: 133 },
-        { r: 253, g: 224, b: 71  }
-      ],
-      // 3. Golden Champagne & Sunset Flame
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 253, g: 224, b: 71  },
-        { r: 251, g: 146, b: 60  },
-        { r: 245, g: 158, b: 11  },
-        { r: 254, g: 240, b: 138 }
-      ],
-      // 4. Emerald Aurora & Neon Mint
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 52,  g: 211, b: 153 },
-        { r: 16,  g: 185, b: 129 },
-        { r: 110, g: 231, b: 183 },
-        { r: 159, g: 231, b: 255 }
-      ],
-      // 5. Electric Purple & Violet Starlight
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 168, g: 85,  b: 247 },
-        { r: 192, g: 132, b: 252 },
-        { r: 129, g: 140, b: 248 },
-        { r: 244, g: 114, b: 182 }
-      ],
-      // 6. Multicolor Rainbow Firework
-      [
-        { r: 255, g: 255, b: 255 },
-        { r: 253, g: 224, b: 71  },
-        { r: 56,  g: 189, b: 248 },
-        { r: 244, g: 63,  b: 94  },
-        { r: 52,  g: 211, b: 153 },
-        { r: 168, g: 85,  b: 247 }
-      ]
+      // 1. Classic Golden Sparkler (Reference Photo Match)
+      {
+        glow: 'rgba(255, 170, 40, 0.45)',
+        mid: { r: 255, g: 215, b: 100 },
+        bright: { r: 255, g: 245, b: 190 },
+        ember: { r: 255, g: 130, b: 30 }
+      },
+      // 2. Champagne & Ice White
+      {
+        glow: 'rgba(255, 200, 120, 0.40)',
+        mid: { r: 255, g: 230, b: 150 },
+        bright: { r: 255, g: 255, b: 240 },
+        ember: { r: 255, g: 160, b: 50 }
+      },
+      // 3. Electric Kia Cyan & Gold Fusion
+      {
+        glow: 'rgba(56, 189, 248, 0.35)',
+        mid: { r: 159, g: 231, b: 255 },
+        bright: { r: 255, g: 255, b: 255 },
+        ember: { r: 253, g: 224, b: 71 }
+      },
+      // 4. Rose Gold & Cosmic Magenta
+      {
+        glow: 'rgba(244, 63, 94, 0.35)',
+        mid: { r: 251, g: 146, b: 60 },
+        bright: { r: 254, g: 240, b: 138 },
+        ember: { r: 244, g: 63, b: 94 }
+      }
     ];
 
     let currentTheme = COLOR_THEMES[0];
@@ -1055,8 +1036,9 @@
       const curW = W || window.innerWidth || 360;
       const curH = H || window.innerHeight || 600;
       const text = String(Math.max(0, num)).padStart(2, '0');
-      const fs = Math.max(28, Math.min(curW * 0.40, curH * 0.45));
-      
+      const fs = Math.max(28, Math.min(curW * 0.38, curH * 0.42));
+      currentFontSize = fs;
+
       const sW = Math.max(10, Math.ceil(fs * 1.5));
       const sH = Math.max(10, Math.ceil(fs * 1.3));
       sampleCv.width = sW;
@@ -1077,7 +1059,7 @@
       }
       const data = imgData.data;
 
-      const step = Math.max(3, Math.floor(fs / 40));
+      const step = Math.max(3, Math.floor(fs / 36));
       const offsetX = posX - sW / 2;
       const offsetY = posY - sH / 2;
 
@@ -1085,15 +1067,13 @@
         for (let x = 0; x < sW; x += step) {
           const idx = (y * sW + x) * 4;
           const alpha = data[idx + 3];
-          if (alpha > 100) {
+          if (alpha > 110) {
             digitPoints.push({
               x: x + offsetX,
               y: y + offsetY,
               alpha: alpha / 255,
               flicker: Math.random() * 6.28,
-              flickerSpeed: Math.random() * 0.35 + 0.25,
-              color: currentTheme[Math.floor(Math.random() * currentTheme.length)],
-              size: Math.random() * 2.6 + 1.8
+              flickerSpeed: Math.random() * 0.35 + 0.25
             });
           }
         }
@@ -1103,15 +1083,15 @@
     function launchRocket() {
       const curW = W || window.innerWidth || 360;
       const curH = H || window.innerHeight || 600;
-      const fs = Math.min(curW * 0.40, curH * 0.45);
-      const minX = Math.max(fs * 0.6, curW * 0.22);
-      const maxX = Math.min(curW - fs * 0.6, curW * 0.78);
+      const fs = Math.min(curW * 0.38, curH * 0.42);
+      const minX = Math.max(fs * 0.65, curW * 0.22);
+      const maxX = Math.min(curW - fs * 0.65, curW * 0.78);
       targetX = minX + Math.random() * (maxX - minX);
-      targetY = curH * (0.24 + Math.random() * 0.22);
+      targetY = curH * (0.24 + Math.random() * 0.20);
 
       currentTheme = COLOR_THEMES[Math.floor(Math.random() * COLOR_THEMES.length)];
 
-      const startX = curW * (0.25 + Math.random() * 0.5);
+      const startX = curW * (0.28 + Math.random() * 0.44);
       const startY = curH + 20;
 
       rockets = [{
@@ -1122,75 +1102,69 @@
         tx: targetX,
         ty: targetY,
         trail: [],
-        color: currentTheme[1] || currentTheme[0]
+        color: currentTheme.mid
       }];
     }
 
-    // Each digit-point becomes a physics-driven firework spark
-    let fireworkSparks = [];
-
+    // Trigger aerial radial fireworks and sparkler ignition matching reference photo
     function triggerParticleShapeExplosion() {
-      fireworkSparks = [];
-      activeSparks = [];
-      microBursts = [];
+      aerialRays = [];
+      sizzleSparks = [];
+      fallingEmbers = [];
+      shockwaves = [];
       rockets = [];
 
       const cx = targetX || (W / 2);
       const cy = targetY || (H * 0.38);
-      const curW = W || window.innerWidth || 360;
-      const curH = H || window.innerHeight || 600;
+      const fs = currentFontSize || 60;
 
-      // 1. Soft shockwave ring
-      microBursts.push({
-        x: cx, y: cy, r: 6,
-        maxR: Math.min(curW, curH) * 0.45,
-        alpha: 0.7,
-        color: currentTheme[1] || currentTheme[0]
-      });
+      // 1. Multiple Aerial Radial Firework Centers behind/around the number (as in reference image)
+      const burstCenters = [
+        { x: cx, y: cy - fs * 0.15, count: 55, maxR: fs * 1.5, scale: 1.0 },
+        { x: cx - fs * 0.65, y: cy - fs * 0.25, count: 40, maxR: fs * 1.2, scale: 0.85 },
+        { x: cx + fs * 0.65, y: cy - fs * 0.20, count: 40, maxR: fs * 1.2, scale: 0.85 }
+      ];
 
-      // 2. One spark per digit-point: softly blooms outward from center
-      for (let i = 0; i < digitPoints.length; i++) {
-        const pt = digitPoints[i];
-        const col = pt.color || currentTheme[Math.floor(Math.random() * currentTheme.length)];
-        const dx = pt.x - cx;
-        const dy = pt.y - cy;
-        const angle = Math.atan2(dy, dx);
-
-        fireworkSparks.push({
-          x: cx + (Math.random() - 0.5) * 5,
-          y: cy + (Math.random() - 0.5) * 5,
-          px: cx, py: cy,
-          targetX: pt.x,
-          targetY: pt.y,
-          outAngle: angle + (Math.random() - 0.5) * 0.25,
-          outSpeed: 0.3 + Math.random() * 0.6,
-          gravity: 0.02 + Math.random() * 0.03,
-          color: col,
-          size: Math.random() * 2.4 + 1.8,
-          alpha: pt.alpha,
-          flicker: Math.random() * 6.28,
-          flickerSpeed: Math.random() * 0.18 + 0.10,
-          life: 1.0
+      for (let b = 0; b < burstCenters.length; b++) {
+        const bc = burstCenters[b];
+        shockwaves.push({
+          x: bc.x,
+          y: bc.y,
+          r: 6,
+          maxR: bc.maxR * 0.7,
+          alpha: 0.75,
+          color: currentTheme.mid
         });
+
+        for (let i = 0; i < bc.count; i++) {
+          const angle = (i / bc.count) * Math.PI * 2 + (Math.random() - 0.5) * 0.15;
+          const length = bc.maxR * (0.65 + Math.random() * 0.55);
+          aerialRays.push({
+            cx: bc.x,
+            cy: bc.y,
+            angle: angle,
+            length: length,
+            speed: (Math.random() * 0.3 + 0.85),
+            sparkSize: Math.random() * 2.2 + 1.4,
+            flicker: Math.random() * 6.28,
+            color: (Math.random() < 0.4) ? currentTheme.bright : currentTheme.mid
+          });
+        }
       }
 
-      // 3. Gentle background sparkles
-      const extraCount = Math.min(45, Math.max(20, Math.floor(curW * 0.05)));
-      for (let i = 0; i < extraCount; i++) {
+      // 2. Initial falling embers drifting down
+      for (let i = 0; i < 40; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 10 + 3;
-        const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
-        activeSparks.push({
-          x: cx, y: cy, px: cx, py: cy,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - (Math.random() * 1.5),
-          color: col,
-          size: Math.random() * 2.6 + 1.2,
-          decay: Math.random() * 0.018 + 0.010,
-          life: 1.0,
-          drag: 0.95,
-          gravity: 0.10,
-          flicker: Math.random() * 6.28
+        const dist = Math.random() * fs * 1.1;
+        fallingEmbers.push({
+          x: cx + Math.cos(angle) * dist,
+          y: cy + Math.sin(angle) * dist * 0.7,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: Math.random() * 1.5 + 0.5,
+          size: Math.random() * 2.0 + 1.0,
+          color: (Math.random() < 0.6) ? currentTheme.mid : currentTheme.ember,
+          flicker: Math.random() * 6.28,
+          life: 1.0
         });
       }
     }
@@ -1220,151 +1194,197 @@
       const isEven = (countdown % 2 === 0);
 
       try {
-        // ── EVEN NUMBER: Soft firework bloom → number shape → gentle fade out ──
         if (isEven) {
           const cx = targetX || (W / 2);
           const cy = targetY || (H * 0.38);
+          const text = String(Math.max(0, countdown)).padStart(2, '0');
+          const fs = currentFontSize || 60;
 
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
 
-          // Smooth phase timing:
-          // 0.00s ~ 0.30s : Sparks bloom softly outward from center to digit positions
-          // 0.30s ~ 0.55s : Number fully formed, glowing warmly
-          // 0.55s ~ 0.98s : Gentle fade out — sparks dim smoothly, slight downward drift
+          // Timeline:
+          // 0.00s ~ 0.28s : Soft bloom & aerial firework explosion outward
+          // 0.28s ~ 0.52s : Peak sparkler brilliance & crackling sizzle sparks
+          // 0.52s ~ 0.98s : Soft, graceful fade out into night darkness
+          const bloomP = Math.min(1, progress / 0.28);
+          const easeBloom = 1 - Math.pow(1 - bloomP, 2.6);
 
-          const burstPhase = Math.min(1, progress / 0.30);
-          const easeBurst = 1 - Math.pow(1 - burstPhase, 2.8); // smooth ease-out
+          const fadeP = Math.max(0, (progress - 0.50) / 0.48);
+          const easeFade = fadeP * fadeP; // smooth quadratic fade
+          const alpha = Math.max(0, (1 - easeFade) * easeBloom);
 
-          // Gentle fade begins
-          const fadePhase = Math.max(0, (progress - 0.50) / 0.48);
-          const easeFade = fadePhase * fadePhase; // quadratic = very smooth
-
-          // 1. Warm ambient glow
-          const glowAlpha = Math.max(0, (1 - easeFade) * Math.min(1, easeBurst * 1.5));
-          if (glowAlpha > 0.01) {
-            const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-            const glowRad = Math.min(W * 0.32, 240);
-            const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.18 * glowAlpha) + ')');
-            radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.04 * glowAlpha) + ')');
-            radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
-            ctx.fillStyle = radGlow;
+          // ── 1. ATMOSPHERIC NIGHT SKY GLOW & SMOKE HAZE ──
+          if (alpha > 0.01) {
+            const glowRad = fs * 2.4;
+            const glowGrad = ctx.createRadialGradient(cx, cy - fs * 0.1, 0, cx, cy - fs * 0.1, glowRad);
+            glowGrad.addColorStop(0, currentTheme.glow.replace('0.45', String(0.38 * alpha)).replace('0.40', String(0.35 * alpha)).replace('0.35', String(0.30 * alpha)));
+            glowGrad.addColorStop(0.5, 'rgba(255, 180, 50, ' + (0.08 * alpha) + ')');
+            glowGrad.addColorStop(1, 'rgba(7, 9, 13, 0)');
+            ctx.fillStyle = glowGrad;
             ctx.beginPath();
-            ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
+            ctx.arc(cx, cy - fs * 0.1, glowRad, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // 2. Render firework sparks forming & fading the number
-          for (let i = 0; i < fireworkSparks.length; i++) {
-            const sp = fireworkSparks[i];
-            sp.px = sp.x;
-            sp.py = sp.y;
+          // ── 2. BACKGROUND AERIAL FIREWORKS (CHdefault_apiSANTHEMUM RAYS) ──
+          if (alpha > 0.01) {
+            for (let i = 0; i < aerialRays.length; i++) {
+              const rk = aerialRays[i];
+              rk.flicker += 0.25;
+              const rflk = 0.8 + 0.2 * Math.sin(rk.flicker);
+              const curLen = rk.length * easeBloom * (1 + fadeP * 0.18);
+              const innerR = Math.max(4, curLen * 0.15);
 
-            if (burstPhase < 1.0) {
-              // Blooming outward from center — smooth interpolation
-              const t = easeBurst;
-              sp.x = cx + (sp.targetX - cx) * t + (Math.random() - 0.5) * (1 - t) * 3;
-              sp.y = cy + (sp.targetY - cy) * t + (Math.random() - 0.5) * (1 - t) * 3;
-            } else if (fadePhase > 0) {
-              // Gentle downward drift + very slight outward spread
-              const drift = easeFade;
-              const gentleFall = drift * drift * 18;
-              const softSpread = drift * sp.outSpeed * 8;
-              sp.x = sp.targetX + Math.cos(sp.outAngle) * softSpread + (Math.random() - 0.5) * drift;
-              sp.y = sp.targetY + gentleFall + (Math.random() - 0.5) * drift;
-            } else {
-              // Holding at digit position — tiny shimmer
-              sp.x = sp.targetX + (Math.random() - 0.5) * 0.6;
-              sp.y = sp.targetY + (Math.random() - 0.5) * 0.6;
-            }
+              const x1 = rk.cx + Math.cos(rk.angle) * innerR;
+              const y1 = rk.cy + Math.sin(rk.angle) * innerR + (fadeP * fadeP * 12);
+              const x2 = rk.cx + Math.cos(rk.angle) * curLen;
+              const y2 = rk.cy + Math.sin(rk.angle) * curLen + (fadeP * fadeP * 16);
 
-            // Soft flicker
-            sp.flicker += sp.flickerSpeed;
-            const flk = 0.82 + 0.18 * Math.sin(sp.flicker);
+              const rayAlpha = Math.max(0, alpha * rflk * 0.75);
 
-            // Alpha: smooth rise during burst, smooth fall during fade
-            let sparkAlpha;
-            if (burstPhase < 1.0) {
-              sparkAlpha = easeBurst * flk * sp.alpha;
-            } else {
-              sparkAlpha = Math.max(0, (1.0 - easeFade)) * flk * sp.alpha;
-            }
-
-            if (sparkAlpha <= 0.008) continue;
-
-            // Soft streak trail during bloom
-            if (burstPhase < 1.0 && burstPhase > 0.08) {
-              ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.55) + ')';
-              ctx.lineWidth = Math.max(0.4, sp.size * 0.6);
+              // Needle ray streak
+              ctx.strokeStyle = 'rgba(' + rk.color.r + ',' + rk.color.g + ',' + rk.color.b + ',' + rayAlpha + ')';
+              ctx.lineWidth = Math.max(0.5, (1.6 - fadeP * 0.6));
               ctx.beginPath();
-              ctx.moveTo(sp.px, sp.py);
-              ctx.lineTo(sp.x, sp.y);
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
               ctx.stroke();
+
+              // Radiant spark tip at end of needle ray
+              ctx.fillStyle = 'rgba(255, 255, 255, ' + rayAlpha + ')';
+              ctx.beginPath();
+              ctx.arc(x2, y2, rk.sparkSize * (1 - fadeP * 0.4), 0, Math.PI * 2);
+              ctx.fill();
             }
-
-            // Colored glow body — shrinks gently during fade
-            const bodySize = sp.size * (fadePhase > 0 ? Math.max(0.4, 1 - easeFade * 0.5) : 1.0);
-            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (sparkAlpha * 0.88) + ')';
-            ctx.beginPath();
-            ctx.arc(sp.x, sp.y, bodySize * 1.15, 0, Math.PI * 2);
-            ctx.fill();
-
-            // White-hot core
-            ctx.fillStyle = 'rgba(255, 255, 255, ' + (sparkAlpha * 0.9) + ')';
-            ctx.beginPath();
-            ctx.arc(sp.x, sp.y, bodySize * 0.5, 0, Math.PI * 2);
-            ctx.fill();
           }
 
-          // 3. Background sparkles (gentle physics)
-          for (let i = activeSparks.length - 1; i >= 0; i--) {
-            const sp = activeSparks[i];
+          // ── 3. SHOCKWAVE EXPANSION RINGS ──
+          for (let i = shockwaves.length - 1; i >= 0; i--) {
+            const sw = shockwaves[i];
+            sw.r += (sw.maxR - sw.r) * 0.14;
+            sw.alpha *= 0.86;
+            if (sw.alpha < 0.01) {
+              shockwaves.splice(i, 1);
+              continue;
+            }
+            ctx.strokeStyle = 'rgba(' + sw.color.r + ',' + sw.color.g + ',' + sw.color.b + ',' + (sw.alpha * alpha) + ')';
+            ctx.lineWidth = Math.max(0.5, 2.2 * sw.alpha);
+            ctx.beginPath();
+            ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // ── 4. FOREGROUND: SPARKLER FIREWORK NUMBER CALLIGRAPHY ──
+          if (alpha > 0.01) {
+            ctx.save();
+            ctx.font = '900 ' + fs + 'px Nunito, "KiaSignature", Pretendard, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            const driftY = fadeP * fadeP * 14;
+
+            // Layer 1: Wide Deep Golden Glow Bloom
+            ctx.shadowColor = 'rgba(' + currentTheme.mid.r + ',' + currentTheme.mid.g + ',' + currentTheme.mid.b + ',' + (0.9 * alpha) + ')';
+            ctx.shadowBlur = 28;
+            ctx.strokeStyle = 'rgba(' + currentTheme.ember.r + ',' + currentTheme.ember.g + ',' + currentTheme.ember.b + ',' + (0.6 * alpha) + ')';
+            ctx.lineWidth = Math.max(2, fs * 0.075);
+            ctx.strokeText(text, cx, cy + driftY);
+
+            // Layer 2: Radiant Golden Sparkler Beam
+            ctx.shadowColor = 'rgba(' + currentTheme.bright.r + ',' + currentTheme.bright.g + ',' + currentTheme.bright.b + ',' + (0.8 * alpha) + ')';
+            ctx.shadowBlur = 14;
+            ctx.strokeStyle = 'rgba(' + currentTheme.mid.r + ',' + currentTheme.mid.g + ',' + currentTheme.mid.b + ',' + (0.85 * alpha) + ')';
+            ctx.lineWidth = Math.max(1.5, fs * 0.045);
+            ctx.strokeText(text, cx, cy + driftY);
+
+            // Layer 3: Intense Burning White-Hot Core
+            ctx.shadowBlur = 4;
+            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.95 * alpha) + ')';
+            ctx.lineWidth = Math.max(1, fs * 0.018);
+            ctx.strokeText(text, cx, cy + driftY);
+
+            ctx.restore();
+          }
+
+          // ── 5. SPARKLER CRACKLING SIZZLE PARTICLES (SPITTING OFF STROKES) ──
+          // Spawn live micro sizzle sparks around stroke points
+          if (alpha > 0.08 && digitPoints.length > 0) {
+            const sizzleRate = Math.floor(digitPoints.length * 0.14 * (1 - fadeP * 0.6));
+            for (let s = 0; s < sizzleRate; s++) {
+              const pt = digitPoints[Math.floor(Math.random() * digitPoints.length)];
+              const angle = Math.random() * Math.PI * 2;
+              const spd = Math.random() * 5.0 + 1.5;
+              sizzleSparks.push({
+                x: pt.x + (Math.random() - 0.5) * 6,
+                y: pt.y + (fadeP * fadeP * 14) + (Math.random() - 0.5) * 6,
+                px: pt.x,
+                py: pt.y + (fadeP * fadeP * 14),
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd + 0.3,
+                size: Math.random() * 2.2 + 1.0,
+                color: (Math.random() < 0.4) ? currentTheme.bright : currentTheme.mid,
+                life: 1.0,
+                decay: Math.random() * 0.06 + 0.035
+              });
+            }
+          }
+
+          // Render & update sizzle sparks
+          for (let i = sizzleSparks.length - 1; i >= 0; i--) {
+            const sp = sizzleSparks[i];
             sp.px = sp.x;
             sp.py = sp.y;
-            sp.vx *= sp.drag;
-            sp.vy = sp.vy * sp.drag + sp.gravity;
             sp.x += sp.vx;
             sp.y += sp.vy;
             sp.life -= sp.decay;
-            sp.flicker += 0.25;
 
-            if (sp.life <= 0 || sp.x < -20 || sp.x > W + 20 || sp.y > H + 20) {
-              activeSparks.splice(i, 1);
+            if (sp.life <= 0) {
+              sizzleSparks.splice(i, 1);
               continue;
             }
 
-            const flk = 0.75 + 0.25 * Math.sin(sp.flicker);
-            const currentAlpha = Math.max(0, sp.life * sp.life * flk);
-            if (currentAlpha <= 0.01) continue;
+            const spAlpha = sp.life * alpha;
+            if (spAlpha <= 0.01) continue;
 
-            ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.65) + ')';
-            ctx.lineWidth = Math.max(0.4, sp.size * sp.life * 0.6);
+            // Sizzle spark trail
+            ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + spAlpha + ')';
+            ctx.lineWidth = Math.max(0.5, sp.size * sp.life);
             ctx.beginPath();
             ctx.moveTo(sp.px, sp.py);
             ctx.lineTo(sp.x, sp.y);
             ctx.stroke();
 
-            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.8) + ')';
+            // Star flash spark
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + spAlpha + ')';
             ctx.beginPath();
-            ctx.arc(sp.x, sp.y, sp.size * sp.life * 0.9, 0, Math.PI * 2);
+            ctx.arc(sp.x, sp.y, sp.size * 0.6 * sp.life, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // 4. Soft shockwave ring
-          for (let i = microBursts.length - 1; i >= 0; i--) {
-            const sw = microBursts[i];
-            sw.r += (sw.maxR - sw.r) * 0.12;
-            sw.alpha *= 0.88;
-            if (sw.alpha < 0.01) {
-              microBursts.splice(i, 1);
+          // ── 6. GENTLE FALLING GOLDEN EMBERS (WEAK GRAVITY DRIFT) ──
+          for (let i = fallingEmbers.length - 1; i >= 0; i--) {
+            const em = fallingEmbers[i];
+            em.x += em.vx;
+            em.y += em.vy;
+            em.life -= 0.012;
+            em.flicker += 0.2;
+
+            if (em.life <= 0) {
+              fallingEmbers.splice(i, 1);
               continue;
             }
-            ctx.strokeStyle = 'rgba(' + sw.color.r + ',' + sw.color.g + ',' + sw.color.b + ',' + sw.alpha + ')';
-            ctx.lineWidth = Math.max(0.5, 2.0 * sw.alpha);
+
+            const eFlk = 0.7 + 0.3 * Math.sin(em.flicker);
+            const emAlpha = Math.max(0, em.life * alpha * eFlk);
+            if (emAlpha <= 0.01) continue;
+
+            ctx.fillStyle = 'rgba(' + em.color.r + ',' + em.color.g + ',' + em.color.b + ',' + emAlpha + ')';
             ctx.beginPath();
-            ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.arc(em.x, em.y, em.size * (1 - fadeP * 0.4), 0, Math.PI * 2);
+            ctx.fill();
           }
 
           ctx.restore();
@@ -1381,7 +1401,7 @@
           ctx.scale(pulse, pulse);
           ctx.translate(-cx, -cy);
 
-          const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
+          const themeCol = currentTheme.mid || { r: 255, g: 215, b: 100 };
           const glowRad = Math.min(W * 0.28, 200);
           const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
           radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ', ' + (0.18 * alpha) + ')');
@@ -1465,9 +1485,10 @@
       if (q1AnimId) cancelAnimationFrame(q1AnimId);
       q1Selected = false;
       secondStart = null;
-      fireworkSparks = [];
-      activeSparks = [];
-      microBursts = [];
+      aerialRays = [];
+      sizzleSparks = [];
+      fallingEmbers = [];
+      shockwaves = [];
       rockets = [];
       resize();
       if (countdown % 2 === 0) {
