@@ -973,7 +973,6 @@
     let digitPoints = [];
     let particles = [];
     let shockwaves = [];
-    let sparkles = [];
 
     // Vibrant Random Color Themes
     const COLOR_THEMES = [
@@ -1097,43 +1096,39 @@
 
       const cx = W / 2;
       const cy = H * 0.40;
-      const fs = Math.min(W * 0.44, H * 0.48);
 
-      // Random anchor point mode:
-      // 0: Dual Burst (Left digit center + Right digit center)
-      // 1: Top-center fountain burst (shoots down & wide)
-      // 2: Bottom-left upward rocket burst
-      // 3: Bottom-right upward rocket burst
-      // 4: Central radial starburst
-      const anchorMode = Math.floor(Math.random() * 5);
-      
+      // Anchor point selection: Strictly within actual number stroke points (never in black background)
       let anchors = [];
-      if (anchorMode === 0) {
-        // Dual anchors on left and right digits
-        anchors = [
-          { x: cx - fs * 0.32, y: cy + (Math.random() - 0.5) * 20 },
-          { x: cx + fs * 0.32, y: cy + (Math.random() - 0.5) * 20 }
-        ];
-      } else if (anchorMode === 1) {
-        // Top fountain
-        anchors = [{ x: cx + (Math.random() - 0.5) * 40, y: cy - fs * 0.35 }];
-      } else if (anchorMode === 2) {
-        // Bottom-left launch
-        anchors = [{ x: cx - fs * 0.35, y: cy + fs * 0.30 }];
-      } else if (anchorMode === 3) {
-        // Bottom-right launch
-        anchors = [{ x: cx + fs * 0.35, y: cy + fs * 0.30 }];
+      if (digitPoints.length > 0) {
+        const useDual = (Math.random() < 0.45);
+        if (useDual) {
+          const leftPoints = digitPoints.filter(p => p.x < cx);
+          const rightPoints = digitPoints.filter(p => p.x >= cx);
+          const p1 = (leftPoints.length > 0)
+            ? leftPoints[Math.floor(Math.random() * leftPoints.length)]
+            : digitPoints[Math.floor(Math.random() * digitPoints.length)];
+          const p2 = (rightPoints.length > 0)
+            ? rightPoints[Math.floor(Math.random() * rightPoints.length)]
+            : digitPoints[Math.floor(Math.random() * digitPoints.length)];
+          anchors = [
+            { x: p1.x, y: p1.y },
+            { x: p2.x, y: p2.y }
+          ];
+        } else {
+          // 1 random point strictly on the digit stroke
+          const p = digitPoints[Math.floor(Math.random() * digitPoints.length)];
+          anchors = [{ x: p.x, y: p.y }];
+        }
       } else {
-        // Center with slight organic shift
-        anchors = [{ x: cx + (Math.random() - 0.5) * 30, y: cy + (Math.random() - 0.5) * 30 }];
+        anchors = [{ x: cx, y: cy }];
       }
 
-      // 1. Shrapnel burst from all sampled points in the number (~300+ particles)
+      // 1. Shrapnel burst from all sampled points in the number
       const count = digitPoints.length;
       for (let i = 0; i < count; i++) {
         const p = digitPoints[i];
         
-        // Find nearest anchor
+        // Find nearest anchor on the digit
         let nearestAnchor = anchors[0];
         if (anchors.length > 1) {
           const d0 = Math.hypot(p.x - anchors[0].x, p.y - anchors[0].y);
@@ -1146,7 +1141,6 @@
         const angle = Math.atan2(p.y - ay, p.x - ax) + (Math.random() - 0.5) * 0.75;
         const dist = Math.hypot(p.x - ax, p.y - ay);
         
-        // Massive grand speed for wide screen-filling explosion
         const speed = (dist * 0.07 + Math.random() * 12 + 5.5);
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
 
@@ -1168,7 +1162,7 @@
         });
       }
 
-      // 2. Extra high-velocity fireworks tracer rockets (120+ sparks)
+      // 2. Extra high-velocity fireworks tracer rockets from the digit anchors
       const extraCount = Math.min(150, Math.max(70, Math.floor(W * 0.12)));
       for (let i = 0; i < extraCount; i++) {
         const anc = anchors[Math.floor(Math.random() * anchors.length)];
@@ -1177,8 +1171,8 @@
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
 
         particles.push({
-          x: anc.x + (Math.random() - 0.5) * 20,
-          y: anc.y + (Math.random() - 0.5) * 20,
+          x: anc.x,
+          y: anc.y,
           px: anc.x,
           py: anc.y,
           vx: Math.cos(angle) * speed,
@@ -1194,7 +1188,7 @@
         });
       }
 
-      // 3. Shockwave rings from anchors
+      // 3. Shockwave rings strictly centered on the digit anchors
       anchors.forEach(function(anc) {
         shockwaves.push({
           x: anc.x,
@@ -1227,7 +1221,7 @@
       const cy = H * 0.40;
       const isEven = (countdown % 2 === 0);
 
-      // EVEN NUMBERS: Explode with grand fireworks!
+      // EVEN NUMBERS: Explode with grand fireworks from within the digit strokes!
       if (isEven) {
         // Phase 1: Number Materialization & Energy Glow (0ms ~ 320ms)
         if (progress < 0.32) {
@@ -1265,7 +1259,7 @@
 
           ctx.restore();
         } else if (!exploded) {
-          // Trigger the grand firework explosion!
+          // Trigger the grand firework explosion from within the number!
           triggerExplosion();
         }
 
@@ -1336,8 +1330,11 @@
           ctx.restore();
         }
       } else {
-        // ODD NUMBERS: Elegant luminous number pulse & floating embers (no burst)
-        const pulse = 0.92 + 0.08 * Math.sin(progress * Math.PI);
+        // ODD NUMBERS: ONLY the clean, pure glowing number (NO other particles)
+        particles = [];
+        shockwaves = [];
+
+        const pulse = 0.94 + 0.06 * Math.sin(progress * Math.PI);
         const alpha = Math.sin(progress * Math.PI);
 
         ctx.save();
@@ -1345,7 +1342,7 @@
         ctx.scale(pulse, pulse);
         ctx.translate(-cx, -cy);
 
-        // Soft ambient aura
+        // Soft ambient aura behind the number
         const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
         const glowRad = Math.min(W * 0.28, 200);
         const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
@@ -1356,47 +1353,15 @@
         ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw solid glowing number
+        // Draw solid glowing number points only
         for (let i = 0; i < digitPoints.length; i++) {
           const p = digitPoints[i];
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * (0.3 + 0.7 * alpha)) + ')';
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * (0.35 + 0.65 * alpha)) + ')';
           ctx.beginPath();
           ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        ctx.restore();
-
-        // Gentle floating sparkle embers
-        if (Math.random() < 0.3 && sparkles.length < 30) {
-          sparkles.push({
-            x: cx + (Math.random() - 0.5) * W * 0.5,
-            y: cy + (Math.random() - 0.5) * H * 0.4,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: -Math.random() * 1.5 - 0.5,
-            life: 1.0,
-            decay: 0.02,
-            size: Math.random() * 2.5 + 1.0,
-            col: currentTheme[Math.floor(Math.random() * currentTheme.length)]
-          });
-        }
-
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i = sparkles.length - 1; i >= 0; i--) {
-          const sp = sparkles[i];
-          sp.x += sp.vx;
-          sp.y += sp.vy;
-          sp.life -= sp.decay;
-          if (sp.life <= 0) {
-            sparkles.splice(i, 1);
-            continue;
-          }
-          ctx.fillStyle = 'rgba(' + sp.col.r + ',' + sp.col.g + ',' + sp.col.b + ',' + (sp.life * 0.8) + ')';
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, sp.size * sp.life, 0, Math.PI * 2);
-          ctx.fill();
-        }
         ctx.restore();
       }
 
@@ -1419,7 +1384,6 @@
       exploded = false;
       particles = [];
       shockwaves = [];
-      sparkles = [];
       resize();
       q1AnimId = requestAnimationFrame(q1Frame);
     };
