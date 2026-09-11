@@ -592,9 +592,7 @@
 
   <!-- ══════════ Q1 ══════════ -->
   <div class="slide" id="slide-2">
-    <svg id="q1-svg" xmlns="http://www.w3.org/2000/svg"
-         style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></svg>
-    <canvas id="q1-mask" style="display:none;position:absolute;"></canvas>
+    <canvas id="q1-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;pointer-events:none;"></canvas>
     <div id="q1-content">
       <div id="q1-inner">
         <p class="question" id="q1-text">새해를 앞둔<br>마지막 1분,<br>어떤 생각이 떠오르나요?</p>
@@ -946,6 +944,7 @@
 
     updateNavVisibility();
 
+    if (n === 2) setTimeout(startQ1, 200);
     if (n === 3) setTimeout(startQ2, 400);
     if (n === 4) setTimeout(startQ3, 400);
     if (n === 5) setTimeout(startFan, 400);
@@ -953,169 +952,305 @@
     if (n === 7) setTimeout(startPlan, 400);
   }
 
-  // ── Q1 Zigzag SVG countdown ──
+  // ── Q1 Fireworks Countdown Canvas (60 -> 0) ──
   let q1AnimId = null;
+  let startQ1 = null;
+  let resetQ1 = null;
+
   (function () {
-    const svgEl     = document.getElementById('q1-svg');
-    const maskCv    = document.getElementById('q1-mask');
-    const maskCtx   = maskCv.getContext('2d');
+    const canvas = document.getElementById('q1-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
 
-    const GK      = Math.max(0.40, Math.min(1, window.innerWidth / 1180));
-    const FSW     = window.innerWidth < 760 ? 0.46 : 0.62;
-    const LINE_H  = 36 * GK;
-    const GAP_X   = 28 * GK;
-    const OFF_X   = 14 * GK;
-    const BASE_W  = 2  * GK;
-    const MAX_M   = 22;
-    const BLUR    = 28 * GK;
+    let W = 0, H = 0, dpr = 1;
+    let countdown = 60;
+    let secondStart = null;
+    let exploded = false;
 
-    const pool = [];
-    let   poolIdx = 0;
+    // Offscreen canvas for sampling digit glyphs
+    const sampleCv = document.createElement('canvas');
+    const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
 
-    function getRect() {
-      if (poolIdx < pool.length) return pool[poolIdx++];
-      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      pool.push(r); svgEl.appendChild(r); poolIdx++;
-      return r;
+    let digitPoints = [];
+    let particles = [];
+    let shockwaves = [];
+
+    // Color palettes for fireworks sparks
+    const COLORS = [
+      { r: 255, g: 255, b: 255 }, // Diamond White
+      { r: 159, g: 231, b: 255 }, // Electric Cyan (Kia Blue)
+      { r: 56,  g: 189, b: 248 }, // Sky Blue
+      { r: 253, g: 224, b: 71  }, // Sparkling Gold
+      { r: 251, g: 146, b: 60  }, // Amber Spark
+      { r: 220, g: 245, b: 255 }  // Ice White
+    ];
+
+    function resize() {
+      const slide = document.getElementById('slide-2');
+      if (!slide) return;
+      W = slide.offsetWidth;
+      H = slide.offsetHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sampleDigitPoints(countdown);
     }
 
-    let W = 0, H = 0, imgData = null;
+    function sampleDigitPoints(num) {
+      digitPoints = [];
+      const text = String(Math.max(0, num)).padStart(2, '0');
+      const fs = Math.min(W * 0.44, H * 0.48);
+      
+      const sW = Math.ceil(fs * 1.5);
+      const sH = Math.ceil(fs * 1.3);
+      sampleCv.width = sW;
+      sampleCv.height = sH;
+      sampleCtx.clearRect(0, 0, sW, sH);
 
-    function buildMask(num) {
-      maskCv.width = W; maskCv.height = H;
-      maskCtx.clearRect(0, 0, W, H);
-      const text = String(num).padStart(2, '0');
-      const fs   = Math.min(W * FSW, H * 0.58);
-      maskCtx.font         = '900 ' + fs + 'px Nunito, monospace';
-      maskCtx.textAlign    = 'center';
-      maskCtx.textBaseline = 'middle';
-      maskCtx.filter       = 'blur(' + BLUR + 'px)';
-      maskCtx.fillStyle    = '#000';
-      maskCtx.fillText(text, W / 2, H / 2);
-      imgData = maskCtx.getImageData(0, 0, W, H);
-    }
+      sampleCtx.font = '900 ' + fs + 'px Nunito, "KiaSignature", Pretendard, -apple-system, sans-serif';
+      sampleCtx.textAlign = 'center';
+      sampleCtx.textBaseline = 'middle';
+      sampleCtx.fillStyle = '#ffffff';
+      sampleCtx.fillText(text, sW / 2, sH / 2);
 
-    function inten(x, y) {
-      if (!imgData) return 0;
-      const px = Math.floor(x), py = Math.floor(y);
-      if (px < 0 || px >= W || py < 0 || py >= H) return 0;
-      return imgData.data[(py * W + px) * 4 + 3] / 255;
-    }
+      const imgData = sampleCtx.getImageData(0, 0, sW, sH);
+      const data = imgData.data;
 
-    function easeExpo(t) {
-      t = Math.max(0, Math.min(1, t));
-      if (t === 0 || t === 1) return t;
-      return t < 0.5
-        ? Math.pow(2, 20 * t - 10) / 2
-        : (2 - Math.pow(2, -20 * t + 10)) / 2;
-    }
+      const step = Math.max(4, Math.floor(fs / 36));
+      const offsetX = W / 2 - sW / 2;
+      const offsetY = H * 0.40 - sH / 2;
 
-    function drawZigzag(zoom) {
-      const fs       = Math.min(W * FSW, H * 0.58);
-      const maxScale = Math.min(H / (fs * 1.5), W * 0.92 / (fs * 1.12), 3.5);
-      const scale    = 0.85 + (maxScale - 0.85) * zoom;
-
-      const viewW = W / scale, viewH = H / scale;
-      const viewX = W / 2 - viewW / 2, viewY = H / 2 - viewH / 2;
-      svgEl.setAttribute('viewBox', viewX + ' ' + viewY + ' ' + viewW + ' ' + viewH);
-
-      const GAP_Y  = LINE_H + 2;
-      const extraR = Math.max(0, Math.ceil((viewH - H) / 2 / GAP_Y) + 3);
-      const extraC = Math.max(0, Math.ceil((viewW - W) / 2 / GAP_X) + 3);
-      const rows   = Math.ceil(H / GAP_Y) + extraR * 2;
-      const cols   = Math.ceil(W / GAP_X) + extraC * 2;
-      poolIdx = 0;
-
-      for (let ri = 0; ri < rows; ri++) {
-        const row    = ri - extraR;
-        const rowOff = Math.abs(row) % 2 === 1 ? OFF_X : 0;
-        const y      = row * GAP_Y;
-        let   ci     = 0;
-        while (ci < cols) {
-          const col = ci - extraC;
-          const x   = col * GAP_X + rowOff;
-          const itn = inten(x, y);
-          const w   = BASE_W * (1 + (MAX_M - 1) * itn * zoom);
-
-          if (w >= GAP_X) {
-            let endX = x + w / 2;
-            let nx   = ci + 1;
-            while (nx < cols) {
-              const nx2 = (nx - extraC) * GAP_X + rowOff;
-              const nw2 = BASE_W * (1 + (MAX_M - 1) * inten(nx2, y) * zoom);
-              if (nw2 >= GAP_X) { endX = nx2 + nw2 / 2; nx++; } else break;
-            }
-            const r = getRect();
-            r.setAttribute('x',      x - w / 2);
-            r.setAttribute('y',      y - LINE_H / 2);
-            r.setAttribute('width',  endX - (x - w / 2));
-            r.setAttribute('height', LINE_H);
-            r.setAttribute('fill',   '#ffffff');
-            ci = nx;
-          } else {
-            const r = getRect();
-            r.setAttribute('x',      x - w / 2);
-            r.setAttribute('y',      y - LINE_H / 2);
-            r.setAttribute('width',  w);
-            r.setAttribute('height', LINE_H);
-            r.setAttribute('fill',   '#ffffff');
-            ci++;
+      for (let y = 0; y < sH; y += step) {
+        for (let x = 0; x < sW; x += step) {
+          const idx = (y * sW + x) * 4;
+          const alpha = data[idx + 3];
+          if (alpha > 120) {
+            digitPoints.push({
+              x: x + offsetX,
+              y: y + offsetY,
+              origX: x + offsetX,
+              origY: y + offsetY,
+              alpha: alpha / 255
+            });
           }
         }
       }
-      for (let i = poolIdx; i < pool.length; i++) pool[i].setAttribute('width', '0');
     }
 
-    let countdown   = 60;
-    let secondStart = null;
+    function triggerExplosion() {
+      exploded = true;
+      particles = [];
+      const cx = W / 2;
+      const cy = H * 0.40;
+
+      // 1. Shrapnel burst from each point in the number
+      const count = digitPoints.length;
+      for (let i = 0; i < count; i++) {
+        const p = digitPoints[i];
+        const angle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.7;
+        const dist = Math.hypot(p.x - cx, p.y - cy);
+        const speed = (dist * 0.05 + Math.random() * 8 + 3.8);
+        const col = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+        particles.push({
+          x: p.x,
+          y: p.y,
+          px: p.x,
+          py: p.y,
+          vx: Math.cos(angle) * speed * (0.75 + Math.random() * 0.55),
+          vy: Math.sin(angle) * speed * (0.75 + Math.random() * 0.55) - Math.random() * 2.8,
+          color: col,
+          size: Math.random() * 2.8 + 1.2,
+          decay: Math.random() * 0.020 + 0.015,
+          life: 1.0,
+          drag: 0.94,
+          gravity: 0.16,
+          flicker: Math.random() * 6.28
+        });
+      }
+
+      // 2. Extra radial firework sparks
+      const extraSparks = Math.min(100, Math.max(40, Math.floor(W * 0.09)));
+      for (let i = 0; i < extraSparks; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 13 + 4.5;
+        const col = COLORS[Math.floor(Math.random() * COLORS.length)];
+        particles.push({
+          x: cx + (Math.random() - 0.5) * 24,
+          y: cy + (Math.random() - 0.5) * 24,
+          px: cx,
+          py: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - Math.random() * 3.2,
+          color: col,
+          size: Math.random() * 3.4 + 1.6,
+          decay: Math.random() * 0.024 + 0.014,
+          life: 1.0,
+          drag: 0.93,
+          gravity: 0.18,
+          flicker: Math.random() * 6.28
+        });
+      }
+
+      // 3. Shockwave ring
+      shockwaves.push({
+        x: cx,
+        y: cy,
+        r: 12,
+        maxR: Math.min(W, H) * 0.44,
+        alpha: 0.85,
+        color: 'rgba(159, 231, 255,'
+      });
+    }
 
     function q1Frame(ts) {
-      if (q1Selected) return;
-      if (secondStart === null) secondStart = ts;
+      if (q1Selected) {
+        ctx.clearRect(0, 0, W, H);
+        return;
+      }
+      if (secondStart === null) {
+        secondStart = ts;
+        sampleDigitPoints(countdown);
+        exploded = false;
+      }
 
       const elapsed = ts - secondStart;
-      const t       = Math.min(elapsed / 1000, 1);
-      let   zoom;
-      if      (t < 0.38) zoom = easeExpo(t / 0.38);
-      else if (t < 0.65) zoom = 1;
-      else               zoom = 1 - easeExpo((t - 0.65) / 0.35);
+      const progress = Math.min(1, elapsed / 1000);
 
-      drawZigzag(zoom);
+      ctx.clearRect(0, 0, W, H);
 
+      const cx = W / 2;
+      const cy = H * 0.40;
+
+      // Phase 1: Number Materialization & Glow (0ms ~ 340ms)
+      if (progress < 0.34) {
+        const inP = progress / 0.34;
+        const scale = 0.88 + 0.12 * Math.sin(inP * Math.PI / 2);
+        const alpha = Math.min(1, inP * 2.8);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+        ctx.translate(-cx, -cy);
+
+        // Ambient radial aura behind the number
+        const glowRad = Math.min(W * 0.28, 200) * (0.8 + 0.2 * inP);
+        const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
+        radGlow.addColorStop(0, 'rgba(159, 231, 255, ' + (0.22 * alpha) + ')');
+        radGlow.addColorStop(0.5, 'rgba(56, 189, 248, ' + (0.09 * alpha) + ')');
+        radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
+        ctx.fillStyle = radGlow;
+        ctx.beginPath();
+        ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw solid glowing number points
+        for (let i = 0; i < digitPoints.length; i++) {
+          const p = digitPoints[i];
+          const jitterX = (Math.random() - 0.5) * (1 - inP) * 8;
+          const jitterY = (Math.random() - 0.5) * (1 - inP) * 8;
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * alpha * 0.96) + ')';
+          ctx.beginPath();
+          ctx.arc(p.x + jitterX, p.y + jitterY, 2.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      } else if (!exploded) {
+        // Trigger the fireworks explosion!
+        triggerExplosion();
+      }
+
+      // Phase 2: Render Fireworks Explosion Particles & Trails (340ms ~ 1000ms)
+      if (exploded && particles.length > 0) {
+        ctx.save();
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+
+          p.px = p.x;
+          p.py = p.y;
+          p.vx *= p.drag;
+          p.vy = p.vy * p.drag + p.gravity;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+          p.flicker += 0.28;
+
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          const flk = 0.75 + 0.25 * Math.sin(p.flicker);
+          const currentAlpha = Math.max(0, p.life * flk);
+
+          // Draw spark trail streak
+          ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
+          ctx.lineWidth = Math.max(0.5, p.size * p.life);
+          ctx.beginPath();
+          ctx.moveTo(p.px, p.py);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+
+          // Draw spark head glow
+          ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + currentAlpha + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 0.65 * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Render expanding shockwave ring
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i];
+          sw.r += (sw.maxR - sw.r) * 0.14;
+          sw.alpha *= 0.87;
+          if (sw.alpha < 0.01) {
+            shockwaves.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.strokeStyle = sw.color + sw.alpha + ')';
+          ctx.lineWidth = Math.max(0.5, 3.5 * sw.alpha);
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // Next second countdown transition
       if (elapsed >= 1000) {
         countdown--;
+        if (countdown < 0) countdown = 60;
         secondStart = ts;
-        if (countdown < 0) {
-          pool.forEach(r => r.setAttribute('width', '0'));
-          svgEl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-          return;
-        }
-        buildMask(countdown);
+        exploded = false;
+        sampleDigitPoints(countdown);
       }
 
       q1AnimId = requestAnimationFrame(q1Frame);
     }
 
-    function initQ1() {
-      const slide = document.getElementById('slide-2');
-      W = slide.offsetWidth; H = slide.offsetHeight;
-      svgEl.setAttribute('width', W);
-      svgEl.setAttribute('height', H);
-      svgEl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-      buildMask(countdown);
+    startQ1 = function() {
+      if (q1AnimId) cancelAnimationFrame(q1AnimId);
+      q1Selected = false;
+      secondStart = null;
+      exploded = false;
+      resize();
       q1AnimId = requestAnimationFrame(q1Frame);
-    }
+    };
 
-    window.addEventListener('resize', () => {
-      const slide = document.getElementById('slide-2');
-      W = slide.offsetWidth; H = slide.offsetHeight;
-      svgEl.setAttribute('width', W);
-      svgEl.setAttribute('height', H);
-      buildMask(countdown);
-    });
+    resetQ1 = function() {
+      countdown = 60;
+      startQ1();
+    };
 
-    initQ1();
-  }());
+    window.addEventListener('resize', resize);
+    startQ1();
+  })();
 
   // ── Answer selection ──
   const ANSWERS = [];
@@ -1810,6 +1945,7 @@
 
     goToSlide(1);
     pinScroll();
+    if (typeof resetQ1 === 'function') resetQ1();
     overlay.classList.remove('visible');
 
     const art = document.getElementById('rs-art');
