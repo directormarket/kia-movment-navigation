@@ -1321,8 +1321,8 @@
             ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.85) + ')';
             ctx.lineWidth = Math.max(0.6, sp.size * sp.life);
             ctx.beginPath();
-            ctx.moveTo(sp.px, p.py);
-            ctx.lineTo(sp.x, p.y);
+            ctx.moveTo(sp.px, sp.py);
+            ctx.lineTo(sp.x, sp.y);
             ctx.stroke();
 
             ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + currentAlpha + ')';
