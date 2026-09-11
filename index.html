@@ -965,7 +965,6 @@
     let W = 0, H = 0, dpr = 1;
     let countdown = 60;
     let secondStart = null;
-    let exploded = false;
 
     const sampleCv = document.createElement('canvas');
     const sampleCtx = sampleCv.getContext('2d', { willReadFrequently: true });
@@ -1035,27 +1034,31 @@
 
     function resize() {
       const slide = document.getElementById('slide-2');
-      if (!slide) return;
-      W = slide.offsetWidth;
-      H = slide.offsetHeight;
+      W = (slide && slide.offsetWidth) || window.innerWidth || 360;
+      H = (slide && slide.offsetHeight) || window.innerHeight || 600;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
+      canvas.width = Math.max(10, Math.floor(W * dpr));
+      canvas.height = Math.max(10, Math.floor(H * dpr));
       canvas.style.width = W + 'px';
       canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      targetX = W / 2;
-      targetY = H * 0.38;
-      sampleDigitPoints(countdown, targetX, targetY);
+
+      if (!targetX || !targetY) {
+        targetX = W / 2;
+        targetY = H * 0.38;
+      }
+      sampleDigitPoints(countdown, (countdown % 2 === 0) ? targetX : W / 2, (countdown % 2 === 0) ? targetY : H * 0.38);
     }
 
     function sampleDigitPoints(num, posX, posY) {
       digitPoints = [];
+      const curW = W || window.innerWidth || 360;
+      const curH = H || window.innerHeight || 600;
       const text = String(Math.max(0, num)).padStart(2, '0');
-      const fs = Math.min(W * 0.40, H * 0.45);
+      const fs = Math.max(28, Math.min(curW * 0.40, curH * 0.45));
       
-      const sW = Math.ceil(fs * 1.5);
-      const sH = Math.ceil(fs * 1.3);
+      const sW = Math.max(10, Math.ceil(fs * 1.5));
+      const sH = Math.max(10, Math.ceil(fs * 1.3));
       sampleCv.width = sW;
       sampleCv.height = sH;
       sampleCtx.clearRect(0, 0, sW, sH);
@@ -1066,10 +1069,15 @@
       sampleCtx.fillStyle = '#ffffff';
       sampleCtx.fillText(text, sW / 2, sH / 2);
 
-      const imgData = sampleCtx.getImageData(0, 0, sW, sH);
+      let imgData;
+      try {
+        imgData = sampleCtx.getImageData(0, 0, sW, sH);
+      } catch (e) {
+        return;
+      }
       const data = imgData.data;
 
-      const step = Math.max(3, Math.floor(fs / 40));
+      const step = Math.max(3, Math.floor(fs / 38));
       const offsetX = posX - sW / 2;
       const offsetY = posY - sH / 2;
 
@@ -1089,16 +1097,18 @@
     }
 
     function launchRocket() {
-      const fs = Math.min(W * 0.40, H * 0.45);
-      const minX = Math.max(fs * 0.6, W * 0.22);
-      const maxX = Math.min(W - fs * 0.6, W * 0.78);
+      const curW = W || window.innerWidth || 360;
+      const curH = H || window.innerHeight || 600;
+      const fs = Math.min(curW * 0.40, curH * 0.45);
+      const minX = Math.max(fs * 0.6, curW * 0.22);
+      const maxX = Math.min(curW - fs * 0.6, curW * 0.78);
       targetX = minX + Math.random() * (maxX - minX);
-      targetY = H * (0.24 + Math.random() * 0.22);
+      targetY = curH * (0.24 + Math.random() * 0.22);
 
       currentTheme = COLOR_THEMES[Math.floor(Math.random() * COLOR_THEMES.length)];
 
-      const startX = W * (0.25 + Math.random() * 0.5);
-      const startY = H + 20;
+      const startX = curW * (0.25 + Math.random() * 0.5);
+      const startY = curH + 20;
 
       rockets = [{
         startX: startX,
@@ -1112,24 +1122,21 @@
       }];
     }
 
-    // Explosion: Particles fly out from blast point and form the even number shape!
     function triggerParticleShapeExplosion() {
-      exploded = true;
       digitParticles = [];
       radialSparks = [];
       shockwaves = [];
       rockets = [];
 
-      const cx = targetX;
-      const cy = targetY;
+      const cx = targetX || (W / 2);
+      const cy = targetY || (H * 0.38);
 
-      // 1. Digit Shape Particles: Every particle explodes outward and settles onto the number shape!
+      // 1. Every particle bursts from center and forms the even number!
       const count = digitPoints.length;
       for (let i = 0; i < count; i++) {
         const p = digitPoints[i];
         const col = currentTheme[Math.floor(Math.random() * currentTheme.length)];
         
-        // Initial blast overshoot trajectory
         const angle = Math.atan2(p.y - cy, p.x - cx) + (Math.random() - 0.5) * 0.5;
         const dist = Math.hypot(p.x - cx, p.y - cy);
         const midX = cx + Math.cos(angle) * dist * (1.15 + Math.random() * 0.35);
@@ -1154,8 +1161,9 @@
         });
       }
 
-      // 2. Extra radial firework sparks shooting past the number
-      const extraCount = Math.min(100, Math.max(50, Math.floor(W * 0.10)));
+      // 2. Extra radial tracer sparks
+      const curW = W || window.innerWidth || 360;
+      const extraCount = Math.min(100, Math.max(50, Math.floor(curW * 0.10)));
       for (let i = 0; i < extraCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 18 + 6;
@@ -1178,12 +1186,13 @@
         });
       }
 
-      // 3. Expanding shockwave ring
+      // 3. Shockwave ring
+      const curH = H || window.innerHeight || 600;
       shockwaves.push({
         x: cx,
         y: cy,
         r: 12,
-        maxR: Math.min(W, H) * 0.52,
+        maxR: Math.min(curW, curH) * 0.52,
         alpha: 0.9,
         color: currentTheme[1] || currentTheme[0]
       });
@@ -1194,10 +1203,11 @@
         ctx.clearRect(0, 0, W, H);
         return;
       }
+
+      const now = ts || performance.now();
       if (secondStart === null) {
-        secondStart = ts;
-        sampleDigitPoints(countdown, targetX || W / 2, targetY || H * 0.38);
-        exploded = false;
+        secondStart = now;
+        resize();
         if (countdown % 2 === 0) {
           triggerParticleShapeExplosion();
         } else {
@@ -1205,224 +1215,219 @@
         }
       }
 
-      const elapsed = ts - secondStart;
-      const progress = Math.min(1, elapsed / 1000);
+      const elapsed = now - secondStart;
+      const progress = Math.min(1, Math.max(0, elapsed / 1000));
 
       ctx.clearRect(0, 0, W, H);
 
       const isEven = (countdown % 2 === 0);
 
-      // ── EVEN NUMBER: Exploding particles FLY OUT and FORM the even number! ──
-      if (isEven) {
-        const cx = targetX;
-        const cy = targetY;
+      try {
+        // ── EVEN NUMBER: Exploding particles FLY OUT and FORM the even number! ──
+        if (isEven) {
+          const cx = targetX || (W / 2);
+          const cy = targetY || (H * 0.38);
 
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
 
-        // Timing curve:
-        // 0.00s ~ 0.30s: Particles burst from center, arc outwards, and lock into the number glyph shape!
-        // 0.30s ~ 0.55s: The assembled firework number glitters and shines brightly in the sky
-        // 0.55s ~ 0.92s: Particles gently drift with gravity and smoothly fade out into the dark
-        const assembleP = Math.min(1, progress / 0.30);
-        const easeAssemble = 1 - Math.pow(1 - assembleP, 3);
+          const assembleP = Math.min(1, progress / 0.30);
+          const easeAssemble = 1 - Math.pow(1 - assembleP, 3);
 
-        let fadeAlpha = 1.0;
-        if (progress > 0.55) {
-          const fadeP = (progress - 0.55) / 0.37;
-          fadeAlpha = Math.max(0, 1.0 - Math.pow(fadeP, 1.3));
-        }
+          let fadeAlpha = 1.0;
+          if (progress > 0.55) {
+            const fadeP = (progress - 0.55) / 0.37;
+            fadeAlpha = Math.max(0, 1.0 - Math.pow(fadeP, 1.3));
+          }
 
-        // 1. Soft atmospheric bloom around the forming firework number
-        if (fadeAlpha > 0.01 && assembleP > 0.4) {
+          // 1. Soft atmospheric bloom around the forming firework number
+          if (fadeAlpha > 0.01 && assembleP > 0.4) {
+            const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
+            const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * easeAssemble);
+            const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
+            radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.24 * fadeAlpha) + ')');
+            radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.06 * fadeAlpha) + ')');
+            radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
+            ctx.fillStyle = radGlow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 2. Render all particles morphing into and forming the number shape
+          for (let i = 0; i < digitParticles.length; i++) {
+            const p = digitParticles[i];
+            p.px = p.x;
+            p.py = p.y;
+
+            if (assembleP < 1.0) {
+              const t = easeAssemble;
+              const invT = 1 - t;
+              p.x = invT * invT * p.startX + 2 * invT * t * p.midX + t * t * p.targetX;
+              p.y = invT * invT * p.startY + 2 * invT * t * p.midY + t * t * p.targetY;
+            } else {
+              const driftY = Math.pow(progress - 0.30, 1.6) * 22;
+              const driftX = Math.sin(progress * 5 + i) * 2.5;
+              p.x = p.targetX + driftX;
+              p.y = p.targetY + driftY;
+            }
+
+            p.flicker += p.flickerSpeed;
+            const flk = 0.70 + 0.30 * Math.sin(p.flicker);
+            const currentAlpha = Math.max(0, fadeAlpha * flk * p.alpha);
+
+            if (currentAlpha <= 0.01) continue;
+
+            if (assembleP < 1.0) {
+              ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.75) + ')';
+              ctx.lineWidth = Math.max(0.6, p.size * 0.8);
+              ctx.beginPath();
+              ctx.moveTo(p.px, p.py);
+              ctx.lineTo(p.x, p.y);
+              ctx.stroke();
+            }
+
+            ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + currentAlpha + ')';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 3. Render extra radial tracer sparks
+          for (let i = radialSparks.length - 1; i >= 0; i--) {
+            const sp = radialSparks[i];
+            sp.px = sp.x;
+            sp.py = sp.y;
+            sp.vx *= sp.drag;
+            sp.vy = sp.vy * sp.drag + sp.gravity;
+            sp.x += sp.vx;
+            sp.y += sp.vy;
+            sp.life -= sp.decay;
+            sp.flicker += 0.30;
+
+            if (sp.life <= 0) {
+              radialSparks.splice(i, 1);
+              continue;
+            }
+
+            const flk = 0.70 + 0.30 * Math.sin(sp.flicker);
+            const currentAlpha = Math.max(0, sp.life * flk);
+
+            ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.85) + ')';
+            ctx.lineWidth = Math.max(0.6, sp.size * sp.life);
+            ctx.beginPath();
+            ctx.moveTo(sp.px, p.py);
+            ctx.lineTo(sp.x, p.y);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + currentAlpha + ')';
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, sp.size * 0.75 * sp.life, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 4. Render shockwaves
+          for (let i = shockwaves.length - 1; i >= 0; i--) {
+            const sw = shockwaves[i];
+            sw.r += (sw.maxR - sw.r) * 0.16;
+            sw.alpha *= 0.85;
+            if (sw.alpha < 0.01) {
+              shockwaves.splice(i, 1);
+              continue;
+            }
+            ctx.strokeStyle = 'rgba(' + sw.color.r + ',' + sw.color.g + ',' + sw.color.b + ',' + sw.alpha + ')';
+            ctx.lineWidth = Math.max(0.6, 4.0 * sw.alpha);
+            ctx.beginPath();
+            ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        } else {
+          // ── ODD NUMBER: Clean tranquil number in center + rocket shoots up from bottom! ──
+          const cx = W / 2;
+          const cy = H * 0.38;
+
+          const pulse = 0.95 + 0.05 * Math.sin(progress * Math.PI);
+          const alpha = Math.min(1, Math.sin(progress * Math.PI) * 1.3);
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(pulse, pulse);
+          ctx.translate(-cx, -cy);
+
           const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-          const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * easeAssemble);
+          const glowRad = Math.min(W * 0.28, 200);
           const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.24 * fadeAlpha) + ')');
-          radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.06 * fadeAlpha) + ')');
+          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ', ' + (0.18 * alpha) + ')');
           radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
           ctx.fillStyle = radGlow;
           ctx.beginPath();
           ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
           ctx.fill();
-        }
 
-        // 2. Render all particles morphing into and forming the number shape
-        for (let i = 0; i < digitParticles.length; i++) {
-          const p = digitParticles[i];
-          p.px = p.x;
-          p.py = p.y;
-
-          // Quadratic Bezier arc: startX -> midX (burst apex) -> targetX (number position)
-          if (assembleP < 1.0) {
-            const t = easeAssemble;
-            const invT = 1 - t;
-            p.x = invT * invT * p.startX + 2 * invT * t * p.midX + t * t * p.targetX;
-            p.y = invT * invT * p.startY + 2 * invT * t * p.midY + t * t * p.targetY;
-          } else {
-            // Assembled! Settle on the number shape + slight gravitational drift
-            const driftY = Math.pow(progress - 0.30, 1.6) * 22;
-            const driftX = Math.sin(progress * 5 + i) * 2.5;
-            p.x = p.targetX + driftX;
-            p.y = p.targetY + driftY;
-          }
-
-          p.flicker += p.flickerSpeed;
-          const flk = 0.70 + 0.30 * Math.sin(p.flicker);
-          const currentAlpha = Math.max(0, fadeAlpha * flk * p.alpha);
-
-          if (currentAlpha <= 0.01) continue;
-
-          // Draw spark streak line during flight
-          if (assembleP < 1.0) {
-            ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.75) + ')';
-            ctx.lineWidth = Math.max(0.6, p.size * 0.8);
+          for (let i = 0; i < digitPoints.length; i++) {
+            const p = digitPoints[i];
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * (0.35 + 0.65 * alpha)) + ')';
             ctx.beginPath();
-            ctx.moveTo(p.px, p.py);
-            ctx.lineTo(p.x, p.y);
-            ctx.stroke();
+            ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+            ctx.fill();
           }
+          ctx.restore();
 
-          // Glowing outer particle corona
-          ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.85) + ')';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 1.3, 0, Math.PI * 2);
-          ctx.fill();
+          // Render ascending rocket toward targetX, targetY
+          if (rockets.length > 0) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
 
-          // Brilliant white-hot star center
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + currentAlpha + ')';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 0.65, 0, Math.PI * 2);
-          ctx.fill();
-        }
+            for (let i = 0; i < rockets.length; i++) {
+              const rk = rockets[i];
+              const p = Math.min(1, Math.max(0, progress));
+              const easeOut = 1 - Math.pow(1 - p, 2.2);
+              const curX = rk.startX + (rk.tx - rk.startX) * easeOut;
+              const curY = rk.startY + (rk.ty - rk.startY) * easeOut;
 
-        // 3. Render extra radial tracer sparks
-        for (let i = radialSparks.length - 1; i >= 0; i--) {
-          const sp = radialSparks[i];
-          sp.px = sp.x;
-          sp.py = sp.y;
-          sp.vx *= sp.drag;
-          sp.vy = sp.vy * sp.drag + sp.gravity;
-          sp.x += sp.vx;
-          sp.y += sp.vy;
-          sp.life -= sp.decay;
-          sp.flicker += 0.30;
+              rk.trail.push({ x: curX, y: curY, size: Math.random() * 2.5 + 1.2 });
+              if (rk.trail.length > 25) rk.trail.shift();
 
-          if (sp.life <= 0) {
-            radialSparks.splice(i, 1);
-            continue;
-          }
+              for (let j = 0; j < rk.trail.length; j++) {
+                const tr = rk.trail[j];
+                const tAlpha = ((j + 1) / rk.trail.length) * 0.85;
+                ctx.fillStyle = 'rgba(' + rk.color.r + ',' + rk.color.g + ',' + rk.color.b + ',' + tAlpha + ')';
+                ctx.beginPath();
+                ctx.arc(tr.x + (Math.random() - 0.5) * 3, tr.y, tr.size * ((j + 1) / rk.trail.length), 0, Math.PI * 2);
+                ctx.fill();
+              }
 
-          const flk = 0.70 + 0.30 * Math.sin(sp.flicker);
-          const currentAlpha = Math.max(0, sp.life * flk);
-
-          ctx.strokeStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + (currentAlpha * 0.85) + ')';
-          ctx.lineWidth = Math.max(0.6, sp.size * sp.life);
-          ctx.beginPath();
-          ctx.moveTo(sp.px, p.py);
-          ctx.lineTo(sp.x, sp.y);
-          ctx.stroke();
-
-          ctx.fillStyle = 'rgba(' + sp.color.r + ',' + sp.color.g + ',' + sp.color.b + ',' + currentAlpha + ')';
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, sp.size * 0.75 * sp.life, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // 4. Render shockwaves
-        for (let i = shockwaves.length - 1; i >= 0; i--) {
-          const sw = shockwaves[i];
-          sw.r += (sw.maxR - sw.r) * 0.16;
-          sw.alpha *= 0.85;
-          if (sw.alpha < 0.01) {
-            shockwaves.splice(i, 1);
-            continue;
-          }
-          ctx.strokeStyle = 'rgba(' + sw.color.r + ',' + sw.color.g + ',' + sw.color.b + ',' + sw.alpha + ')';
-          ctx.lineWidth = Math.max(0.6, 4.0 * sw.alpha);
-          ctx.beginPath();
-          ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        ctx.restore();
-      } else {
-        // ── ODD NUMBER: Clean tranquil number in center + rocket shoots up from bottom! ──
-        const cx = W / 2;
-        const cy = H * 0.38;
-
-        const pulse = 0.95 + 0.05 * Math.sin(progress * Math.PI);
-        const alpha = Math.min(1, Math.sin(progress * Math.PI) * 1.3);
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.scale(pulse, pulse);
-        ctx.translate(-cx, -cy);
-
-        const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-        const glowRad = Math.min(W * 0.28, 200);
-        const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-        radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ', ' + (0.18 * alpha) + ')');
-        radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
-        ctx.fillStyle = radGlow;
-        ctx.beginPath();
-        ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let i = 0; i < digitPoints.length; i++) {
-          const p = digitPoints[i];
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * (0.35 + 0.65 * alpha)) + ')';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-
-        // Render ascending rocket toward targetX, targetY
-        if (rockets.length > 0) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-
-          for (let i = 0; i < rockets.length; i++) {
-            const rk = rockets[i];
-            const easeOut = 1 - Math.pow(1 - progress, 2.2);
-            const curX = rk.startX + (rk.tx - rk.startX) * easeOut;
-            const curY = rk.startY + (rk.ty - rk.startY) * easeOut;
-
-            rk.trail.push({ x: curX, y: curY, size: Math.random() * 2.5 + 1.2 });
-            if (rk.trail.length > 25) rk.trail.shift();
-
-            for (let j = 0; j < rk.trail.length; j++) {
-              const tr = rk.trail[j];
-              const tAlpha = (j / rk.trail.length) * 0.85;
-              ctx.fillStyle = 'rgba(' + rk.color.r + ',' + rk.color.g + ',' + rk.color.b + ',' + tAlpha + ')';
+              // Rocket head
+              ctx.fillStyle = '#ffffff';
               ctx.beginPath();
-              ctx.arc(tr.x + (Math.random() - 0.5) * 3, tr.y, tr.size * (j / rk.trail.length), 0, Math.PI * 2);
+              ctx.arc(curX, curY, 3.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = 'rgba(' + rk.color.r + ',' + rk.color.g + ',' + rk.color.b + ', 0.9)';
+              ctx.beginPath();
+              ctx.arc(curX, curY, 6.0, 0, Math.PI * 2);
               ctx.fill();
             }
 
-            // Rocket head
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(curX, curY, 3.2, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = 'rgba(' + rk.color.r + ',' + rk.color.g + ',' + rk.color.b + ', 0.9)';
-            ctx.beginPath();
-            ctx.arc(curX, curY, 6.0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.restore();
           }
-
-          ctx.restore();
         }
+      } catch (err) {
+        console.error(err);
       }
 
       // Next second transition
       if (elapsed >= 1000) {
         countdown--;
         if (countdown < 0) countdown = 60;
-        secondStart = ts;
-        exploded = false;
+        secondStart = now;
 
         if (countdown % 2 === 0) {
           sampleDigitPoints(countdown, targetX, targetY);
@@ -1440,7 +1445,6 @@
       if (q1AnimId) cancelAnimationFrame(q1AnimId);
       q1Selected = false;
       secondStart = null;
-      exploded = false;
       digitParticles = [];
       radialSparks = [];
       shockwaves = [];
