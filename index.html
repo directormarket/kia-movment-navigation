@@ -1098,7 +1098,7 @@
       const minX = Math.max(fs * 0.6, W * 0.22);
       const maxX = Math.min(W - fs * 0.6, W * 0.78);
       targetX = minX + Math.random() * (maxX - minX);
-      targetY = H * (0.26 + Math.random() * 0.22);
+      targetY = H * (0.24 + Math.random() * 0.22);
 
       // Pick next explosion theme
       currentTheme = COLOR_THEMES[Math.floor(Math.random() * COLOR_THEMES.length)];
@@ -1238,7 +1238,9 @@
         secondStart = ts;
         sampleDigitPoints(countdown, targetX || W / 2, targetY || H * 0.38);
         exploded = false;
-        if (countdown % 2 !== 0) {
+        if (countdown % 2 === 0) {
+          triggerExplosion();
+        } else {
           launchRocket();
         }
       }
@@ -1250,52 +1252,65 @@
 
       const isEven = (countdown % 2 === 0);
 
-      // EVEN NUMBERS: Explode at targetX, targetY!
+      // ── EVEN NUMBER: Explodes at targetX, targetY, POPS OUT, then FADES OUT ──
       if (isEven) {
         const cx = targetX;
         const cy = targetY;
 
-        // Phase 1: Number Materialization (0ms ~ 300ms)
-        if (progress < 0.30) {
-          const inP = progress / 0.30;
-          const scale = 0.88 + 0.12 * Math.sin(inP * Math.PI / 2);
-          const alpha = Math.min(1, inP * 2.8);
+        // Even number Pop-in and smooth Fade-out curve
+        // 0ms ~ 150ms: Pop in (scale 0.75 -> 1.12 -> 1.0, alpha 0 -> 1)
+        // 150ms ~ 300ms: Peak brightness
+        // 300ms ~ 850ms: Smooth fade out (alpha 1 -> 0)
+        let numAlpha = 0;
+        let numScale = 1.0;
+        if (progress < 0.15) {
+          const pIn = progress / 0.15;
+          numAlpha = pIn;
+          numScale = 0.75 + 0.37 * Math.sin(pIn * Math.PI / 2);
+        } else if (progress < 0.30) {
+          numAlpha = 1.0;
+          numScale = 1.12 - 0.12 * ((progress - 0.15) / 0.15);
+        } else if (progress < 0.85) {
+          const pOut = (progress - 0.30) / 0.55;
+          numAlpha = Math.max(0, 1.0 - Math.pow(pOut, 1.3));
+          numScale = 1.0 + 0.08 * pOut;
+        } else {
+          numAlpha = 0;
+        }
 
+        // Draw the popping & fading Even Number
+        if (numAlpha > 0.01) {
           ctx.save();
           ctx.translate(cx, cy);
-          ctx.scale(scale, scale);
+          ctx.scale(numScale, numScale);
           ctx.translate(-cx, -cy);
 
-          // Vivid radial aura
+          // Explosive flash aura behind the number
           const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
-          const glowRad = Math.min(W * 0.32, 240) * (0.8 + 0.2 * inP);
+          const glowRad = Math.min(W * 0.34, 250);
           const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.28 * alpha) + ')');
-          radGlow.addColorStop(0.5, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.10 * alpha) + ')');
+          radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.35 * numAlpha) + ')');
+          radGlow.addColorStop(0.4, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ',' + (0.12 * numAlpha) + ')');
           radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
           ctx.fillStyle = radGlow;
           ctx.beginPath();
           ctx.arc(cx, cy, glowRad, 0, Math.PI * 2);
           ctx.fill();
 
-          // Draw solid glowing number points
+          // Draw the crisp glowing number points
           for (let i = 0; i < digitPoints.length; i++) {
             const p = digitPoints[i];
-            const jitterX = (Math.random() - 0.5) * (1 - inP) * 8;
-            const jitterY = (Math.random() - 0.5) * (1 - inP) * 8;
-            ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * alpha * 0.98) + ')';
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + (p.alpha * numAlpha * 0.98) + ')';
             ctx.beginPath();
-            ctx.arc(p.x + jitterX, p.y + jitterY, 2.4, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
             ctx.fill();
           }
 
           ctx.restore();
-        } else if (!exploded) {
-          triggerExplosion();
         }
 
-        // Phase 2: Render Grand Fireworks Explosion (300ms ~ 1000ms)
-        if (exploded && particles.length > 0) {
+        // Render Fireworks explosion particles & shockwaves
+        if (particles.length > 0) {
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
 
@@ -1319,7 +1334,7 @@
             const flk = 0.70 + 0.30 * Math.sin(p.flicker);
             const currentAlpha = Math.max(0, p.life * flk);
 
-            // Draw blazing firework spark trail
+            // Draw spark trail
             ctx.strokeStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + (currentAlpha * 0.9) + ')';
             ctx.lineWidth = Math.max(0.6, p.size * p.life);
             ctx.beginPath();
@@ -1327,17 +1342,17 @@
             ctx.lineTo(p.x, p.y);
             ctx.stroke();
 
-            // Draw bright spark head
+            // Draw spark head
             ctx.fillStyle = 'rgba(' + p.color.r + ',' + p.color.g + ',' + p.color.b + ',' + currentAlpha + ')';
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size * 0.75 * p.life, 0, Math.PI * 2);
             ctx.fill();
 
             // Diamond sparkle glint
-            if (p.isCrackle && p.life > 0.4 && Math.random() < 0.2) {
+            if (p.isCrackle && p.life > 0.35 && Math.random() < 0.22) {
               ctx.fillStyle = 'rgba(255, 255, 255, ' + currentAlpha + ')';
               ctx.beginPath();
-              ctx.arc(p.x, p.y, p.size * 1.4 * p.life, 0, Math.PI * 2);
+              ctx.arc(p.x, p.y, p.size * 1.5 * p.life, 0, Math.PI * 2);
               ctx.fill();
             }
           }
@@ -1345,8 +1360,8 @@
           // Render shockwaves
           for (let i = shockwaves.length - 1; i >= 0; i--) {
             const sw = shockwaves[i];
-            sw.r += (sw.maxR - sw.r) * 0.15;
-            sw.alpha *= 0.86;
+            sw.r += (sw.maxR - sw.r) * 0.16;
+            sw.alpha *= 0.85;
             if (sw.alpha < 0.01) {
               shockwaves.splice(i, 1);
               continue;
@@ -1361,13 +1376,13 @@
           ctx.restore();
         }
       } else {
-        // ODD NUMBERS: Clean number + firework rocket ascends from bottom!
+        // ── ODD NUMBER: Clean number appears + firework rocket shoots up from bottom! ──
         const cx = W / 2;
         const cy = H * 0.38;
 
-        // Render clean odd number
-        const pulse = 0.94 + 0.06 * Math.sin(progress * Math.PI);
-        const alpha = Math.sin(progress * Math.PI);
+        // Clean Odd number appearance with smooth pulse
+        const pulse = 0.95 + 0.05 * Math.sin(progress * Math.PI);
+        const alpha = Math.min(1, Math.sin(progress * Math.PI) * 1.3);
 
         ctx.save();
         ctx.translate(cx, cy);
@@ -1377,7 +1392,7 @@
         const themeCol = currentTheme[1] || { r: 159, g: 231, b: 255 };
         const glowRad = Math.min(W * 0.28, 200);
         const radGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRad);
-        radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ', ' + (0.16 * alpha) + ')');
+        radGlow.addColorStop(0, 'rgba(' + themeCol.r + ',' + themeCol.g + ',' + themeCol.b + ', ' + (0.18 * alpha) + ')');
         radGlow.addColorStop(1, 'rgba(7, 9, 13, 0)');
         ctx.fillStyle = radGlow;
         ctx.beginPath();
@@ -1393,7 +1408,7 @@
         }
         ctx.restore();
 
-        // Render ascending firework rocket from bottom to target position
+        // Render ascending rocket toward next target position
         if (rockets.length > 0) {
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
@@ -1404,10 +1419,9 @@
             const curX = rk.startX + (rk.tx - rk.startX) * easeOut;
             const curY = rk.startY + (rk.ty - rk.startY) * easeOut;
 
-            rk.trail.push({ x: curX, y: curY, alpha: 1.0, size: Math.random() * 2.5 + 1.2 });
+            rk.trail.push({ x: curX, y: curY, size: Math.random() * 2.5 + 1.2 });
             if (rk.trail.length > 25) rk.trail.shift();
 
-            // Draw rocket tail trail
             for (let j = 0; j < rk.trail.length; j++) {
               const tr = rk.trail[j];
               const tAlpha = (j / rk.trail.length) * 0.85;
@@ -1417,7 +1431,7 @@
               ctx.fill();
             }
 
-            // Draw bright rocket head
+            // Rocket head
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(curX, curY, 3.2, 0, Math.PI * 2);
@@ -1441,10 +1455,9 @@
         exploded = false;
 
         if (countdown % 2 === 0) {
-          // Even number arrives at the rocket target position!
           sampleDigitPoints(countdown, targetX, targetY);
+          triggerExplosion();
         } else {
-          // Odd number starts, launch next firework rocket from bottom!
           sampleDigitPoints(countdown, W / 2, H * 0.38);
           launchRocket();
         }
@@ -1462,7 +1475,11 @@
       shockwaves = [];
       rockets = [];
       resize();
-      if (countdown % 2 !== 0) launchRocket();
+      if (countdown % 2 === 0) {
+        triggerExplosion();
+      } else {
+        launchRocket();
+      }
       q1AnimId = requestAnimationFrame(q1Frame);
     };
 
